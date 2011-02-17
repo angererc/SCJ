@@ -1,0 +1,10 @@
+SCJ stands for Sequentially Consistent Java.
+
+The Java Memory Model (JMM) defines when modifications in one thread are visible in another thread.  For correctly synchronized programs the JMM guarantees sequential consistency.  In the presence of data races, however, the JMM defines a complex relaxed memory model in order to allow for standard compiler optimizations.  The problem with this relaxed model is that it is so complex that programmers don't understand it and most Java compilers and VMs don't implement it correctly.  In fact, it has been shown that the JMM doesn't even handle cases correctly that it was supposed to be designed for [1].
+
+This project takes a different approach.  As the name implies, Sequentially Consistent Java (SCJ) provides sequential consistency not only for data-race free programs, but also for racy programs.  This results in a simple and well understood memory model that doesn't need much specification and standardization.  
+
+Sequential consistency poses a huge runtime penalty and that's the reason why the JMM doesn't simply require sequential consistency but jumps through all those hoops.  In a sequentially consistent model, the compiler is not allowed to perform many of its optimizations (reordering and load elimination, to name a few).  Our goal is to develop an optimizing compiler for SCJ that gets rid of most of the overhead, resulting in a practical and usable language with sane semantics.
+
+---
+[1] D Aspinall, J Sevcik. Java Memory Model Examples: Good, Bad, and Ugly. VAMP 2007
