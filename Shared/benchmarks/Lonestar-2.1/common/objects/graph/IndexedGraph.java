@@ -63,4 +63,6 @@ public interface IndexedGraph<NodeData> extends Graph<NodeData> {
    * @param index The neighbor to remove
    */
   void removeNeighbor(Node<NodeData> src, int index);
+  
+  int neighborIndex(Node<NodeData> src, Node<NodeData> dst);
 }

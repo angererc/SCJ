@@ -88,7 +88,8 @@ public class ArrayIndexedGraph<NodeData> implements IndexedGraph<NodeData> {
         "ArrayIndexedGraph.addNeighbor(Node<NodeData>, Node<NodeData>) unimplemented");
   }
 
-  protected final int neighborIndex(Node<NodeData> src, Node<NodeData> dst) {
+  @Override
+  public final int neighborIndex(Node<NodeData> src, Node<NodeData> dst) {
     ArrayIndexedNode isrc = (ArrayIndexedNode) src;
     ArrayIndexedNode[] neighbors = isrc.neighbors;
     List<ArrayIndexedNode> neighborList = Arrays.asList(neighbors);

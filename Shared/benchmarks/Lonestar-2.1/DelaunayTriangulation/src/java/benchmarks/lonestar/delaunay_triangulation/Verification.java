@@ -1,4 +1,3 @@
-package benchmarks.lonestar.delaunay_triangulation;
 /*
 Lonestar Benchmark Suite for irregular applications that exhibit 
 amorphous data-parallelism.
@@ -22,6 +21,9 @@ limitations under the License.
 
 File: Verification.java 
 */
+
+package benchmarks.lonestar.delaunay_triangulation;
+
 
 import java.util.HashSet;
 import java.util.Iterator;

@@ -1,40 +1,33 @@
-package benchmarks.lonestar.delaunay_triangulation;
 /*
-Lonestar Benchmark Suite for irregular applications that exhibit 
-amorphous data-parallelism.
+Galois, a framework to exploit amorphous data-parallelism in irregular
+programs.
 
-Center for Grid and Distributed Computing
-The University of Texas at Austin
-
-Copyright (C) 2007, 2008, 2009 The University of Texas at Austin
-
-Licensed under the Eclipse Public License, Version 1.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-http://www.eclipse.org/legal/epl-v10.html
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+Copyright (C) 2010, The University of Texas at Austin. All rights reserved.
+UNIVERSITY EXPRESSLY DISCLAIMS ANY AND ALL WARRANTIES CONCERNING THIS SOFTWARE
+AND DOCUMENTATION, INCLUDING ANY WARRANTIES OF MERCHANTABILITY, FITNESS FOR ANY
+PARTICULAR PURPOSE, NON-INFRINGEMENT AND WARRANTIES OF PERFORMANCE, AND ANY
+WARRANTY THAT MIGHT OTHERWISE ARISE FROM COURSE OF DEALING OR USAGE OF TRADE.
+NO WARRANTY IS EITHER EXPRESS OR IMPLIED WITH RESPECT TO THE USE OF THE
+SOFTWARE OR DOCUMENTATION. Under no circumstances shall University be liable
+for incidental, special, indirect, direct or consequential damages or loss of
+profits, interruption of business, or related expenses which may arise from use
+of Software or Documentation, including but not limited to those resulting from
+defects in Software and/or Documentation, or loss or inaccuracy of data of any
+kind.
 
 File: DataManager.java 
+
 */
 
-import objects.graph.IndexedGraph;
-import objects.graph.Node;
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Locale;
-import java.util.Scanner;
+package benchmarks.lonestar.delaunay_triangulation;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.util.*;
+import objects.graph.Graph;
+import objects.graph.Node;
 
 public class DataManager {
 
@@ -42,8 +35,17 @@ public class DataManager {
   public static Tuple t2;
   public static Tuple t3;
 
+  public static double MIN_X = Double.MAX_VALUE;
+  public static double MAX_X = Double.MIN_VALUE;
+  public static double MIN_Y = Double.MAX_VALUE;
+  public static double MAX_Y = Double.MIN_VALUE;
 
-  public static Collection<Tuple> readTuplesFromFile(String filename) throws FileNotFoundException {
+  /**
+   * @param filename the name of the file containing the tuples to be inserted into the mesh
+   * @return the collections of tuples
+   * @throws IOException
+   */
+  public static Collection<Tuple> readTuplesFromFile(String filename) throws IOException {
     Scanner s = new Scanner(new BufferedReader(new FileReader(filename)));
     s.useLocale(Locale.US);
     List<Tuple> tuples = new ArrayList<Tuple>();
@@ -61,18 +63,28 @@ public class DataManager {
           // The first 3 tuples are the outermost-triangle bounds
           if (nbTuplesRead < 3) {
             switch (nbTuplesRead) {
-              case 0:
-                t1 = new Tuple(x, y);
-                break;
-              case 1:
-                t2 = new Tuple(x, y);
-                break;
-              case 2:
-                t3 = new Tuple(x, y);
-                break;
+            case 0:
+              t1 = new Tuple(x, y);
+              break;
+            case 1:
+              t2 = new Tuple(x, y);
+              break;
+            case 2:
+              t3 = new Tuple(x, y);
+              break;
             }
             nbTuplesRead++;
           } else {
+            if (x < MIN_X) {
+              MIN_X = x;
+            } else if (x > MAX_X) {
+              MAX_X = x;
+            }
+            if (y < MIN_Y) {
+              MIN_Y = y;
+            } else if (y > MAX_Y) {
+              MAX_Y = y;
+            }
             tuples.add(new Tuple(x, y));
           }
           creates = false;
@@ -87,10 +99,16 @@ public class DataManager {
       System.err.println("Error: file " + filename + " finished with an x coordinate");
       return null;
     }
+
     return tuples;
   }
-
-
+  
+  /**
+   * a method for formating a double according to the given precision
+   * @param d the double number to be formatted 
+   * @param precision the precision
+   * @return
+   */
   public static String formatDouble(double d, int precision) {
 
     String s = "";
@@ -100,8 +118,9 @@ public class DataManager {
 
     decimals[0] = (long) d;
 
-    if (d < 0)
+    if (d < 0) {
       abs_d = -d;
+    }
     d0 = abs_d - (long) abs_d;
 
     for (int i = 1; i < precision + 1; i++) {
@@ -117,28 +136,37 @@ public class DataManager {
     return s;
   }
 
-
+  /**
+   * output triangles coordinates(sorted) to the standard output
+   * @param el: all the triangles in the mesh
+   * @param precision: the precision of the coordinates
+   */
   public static void writeElementArray(Element[] el, int precision) {
     PrintStream eleout = System.out;
-    // DecimalFormat df = new DecimalFormat("0.0000000000") ;
 
     for (int i = 0; i < el.length; i++) {
       Element e = el[i];
       if (e.dim == 3) {
         Tuple[] t = e.getRotatedCoords();
-        eleout.println("(" + formatDouble(t[0].x, precision) + " " + formatDouble(t[0].y, precision) + ") (" + formatDouble(t[1].x, precision) + " " + formatDouble(t[1].y, precision) + ") (" + formatDouble(t[2].x, precision) + " " + formatDouble(t[2].y, precision) + ")");
+        eleout.println("(" + formatDouble(t[0].x, precision) + " " + formatDouble(t[0].y, precision) + ") ("
+            + formatDouble(t[1].x, precision) + " " + formatDouble(t[1].y, precision) + ") ("
+            + formatDouble(t[2].x, precision) + " " + formatDouble(t[2].y, precision) + ")");
       }
     }
   }
-
-
-  public static void outputSortedResult(IndexedGraph<Element> mesh, int i) {
-    Element[] el = new Element[mesh.getNumNodes()];
-    int k = 0;
-    for (Node<Element> n : mesh) {
-      el[k++] = n.getData();
-    }
-    // Arrays.sort(el);
-    writeElementArray(el, i);
-  }
+  
+  /**
+   * sort the triangles in the mesh and output the mesh to standard output
+   * @param mesh the mesh to output
+   * @param i the precision for the coordinates 
+   */
+  public static void outputSortedResult(Graph<Element> mesh, int i) {
+	    Element[] el = new Element[mesh.getNumNodes()];
+	    int k = 0;
+	    for (Node<Element> n : mesh) {
+	      el[k++] = n.getData();
+	    }
+	    // Arrays.sort(el);
+	    writeElementArray(el, i);
+	  }
 }

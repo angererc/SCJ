@@ -1,177 +1,73 @@
-package benchmarks.lonestar.delaunay_triangulation;
 /*
-Lonestar Benchmark Suite for irregular applications that exhibit 
-amorphous data-parallelism.
+Galois, a framework to exploit amorphous data-parallelism in irregular
+programs.
 
-Center for Grid and Distributed Computing
-The University of Texas at Austin
+Copyright (C) 2010, The University of Texas at Austin. All rights reserved.
+UNIVERSITY EXPRESSLY DISCLAIMS ANY AND ALL WARRANTIES CONCERNING THIS SOFTWARE
+AND DOCUMENTATION, INCLUDING ANY WARRANTIES OF MERCHANTABILITY, FITNESS FOR ANY
+PARTICULAR PURPOSE, NON-INFRINGEMENT AND WARRANTIES OF PERFORMANCE, AND ANY
+WARRANTY THAT MIGHT OTHERWISE ARISE FROM COURSE OF DEALING OR USAGE OF TRADE.
+NO WARRANTY IS EITHER EXPRESS OR IMPLIED WITH RESPECT TO THE USE OF THE
+SOFTWARE OR DOCUMENTATION. Under no circumstances shall University be liable
+for incidental, special, indirect, direct or consequential damages or loss of
+profits, interruption of business, or related expenses which may arise from use
+of Software or Documentation, including but not limited to those resulting from
+defects in Software and/or Documentation, or loss or inaccuracy of data of any
+kind.
 
-Copyright (C) 2007, 2008, 2009 The University of Texas at Austin
+File: SerialMain.java 
 
-Licensed under the Eclipse Public License, Version 1.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-http://www.eclipse.org/legal/epl-v10.html
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-File: SerialDelaunaytriangulation.java 
  */
 
+package benchmarks.lonestar.delaunay_triangulation;
+
+import util.Launcher;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Stack;
+import java.util.concurrent.ExecutionException;
 
 import objects.graph.ArrayIndexedGraph;
 import objects.graph.IndexedGraph;
 import objects.graph.Node;
-import util.Time;
 
-import java.io.FileNotFoundException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Stack;
+public class SerialDelaunayTriangulation extends AbstractMain {
 
-
-public class SerialDelaunaytriangulation {
-
-  private static boolean isFirstRun = true;
-
-
-  public static void main(String[] args) {
-    long runtime, lasttime, mintime, run;
-
-    runtime = 0;
-    lasttime = Long.MAX_VALUE;
-    mintime = Long.MAX_VALUE;
-    run = 0;
-    while (((run < 3) || (Math.abs(lasttime - runtime) * 64 > Math.min(lasttime, runtime))) && (run < 7)) {
-      System.gc();
-      System.gc();
-      System.gc();
-      System.gc();
-      System.gc();
-      runtime = run(args);
-      if (runtime < mintime)
-        mintime = runtime;
-      run++;
-    }
-    System.err.println("minimum runtime: " + mintime + " ms");
-    System.err.println("");
+  public static void main(String[] args) throws ExecutionException, IOException {
+    new SerialDelaunayTriangulation().run(args);
+    System.err.println("Time: " + Launcher.getLauncher().elapsedTime(true));
   }
 
-
-  @SuppressWarnings("null")
-public static long run(String args[]) {
-
-    if (isFirstRun) {
-      System.err.println();
-      System.err.println("Lonestar Benchmark Suite v2.1");
-      System.err.println("Copyright (C) 2007, 2008, 2009 The University of Texas at Austin");
-      System.err.println("http://iss.ices.utexas.edu/lonestar/");
-      System.err.println();
-      System.err.println("application: Delaunay Triangulation (serial version)");
-      System.err.println("Produces a Delaunay triangulation from a given a set of points");
-      System.err.println("http://iss.ices.utexas.edu/lonestar/delaunaytriangulation.html");
-      System.err.println();
-    }
-
-    String input_file;
-    /**
-     * Arg1: Input file containing the set of initial points
-     */
-    if (args.length < 1) {
-      System.err.println("usage: input_file [verify]");
-      System.exit(1);
-    }
-    // Retrieve the point filename from the input parameters
-    input_file = args[0];
-
-    // Read the set of initial points for the file 'input_file'
-    Collection<Tuple> tuples = null;
-
-    try {
-      tuples = DataManager.readTuplesFromFile(input_file);
-    } catch (FileNotFoundException e) {
-      System.err.println(e);
-    }
-
-    if (isFirstRun) {
-      System.err.println("Delaunay Triangulation configuration: " + tuples.size() + " points, file " + input_file);
-      System.err.println();
-    }
-    /* The final mesh (containing the triangulation) */
-    IndexedGraph<Element> mesh = new ArrayIndexedGraph<Element>(3);
-
-    // BEGIN --- Create the main initial triangle
-    // Create the main triangle and add it to the mesh (plus the 3 segments)
-    Element large_triangle = new Element(DataManager.t1, DataManager.t2, DataManager.t3);
-    Node<Element> large_node = mesh.createNode(large_triangle);
-    large_triangle.graphNode = large_node;
-    mesh.addNode(large_node);
-    // Add the border (3 segments) of the mesh
-    Node<Element> border_node1 = mesh.createNode(new Element(DataManager.t1, DataManager.t2));
-    Node<Element> border_node2 = mesh.createNode(new Element(DataManager.t2, DataManager.t3));
-    Node<Element> border_node3 = mesh.createNode(new Element(DataManager.t3, DataManager.t1));
-    mesh.addNode(border_node1);
-    mesh.addNode(border_node2);
-    mesh.addNode(border_node3);
-
-    mesh.setNeighbor(large_node, 0, border_node1);
-    mesh.setNeighbor(large_node, 1, border_node2);
-    mesh.setNeighbor(large_node, 2, border_node3);
-    mesh.setNeighbor(border_node1, 0, large_node);
-    mesh.setNeighbor(border_node2, 0, large_node);
-    mesh.setNeighbor(border_node3, 0, large_node);
-    // END --- Create the main initial triangle
-
-    /* The History DAG used to locate a point inside the mesh */
-    HistoryDAG dag = new HistoryDAG(large_triangle);
-
-    /* The worklist containing every point to insert in the mesh */
-    Stack<Tuple> worklist = new Stack<Tuple>();
-    for (Tuple tuple : tuples) {
-      worklist.add(tuple);
-    }
-
-    Triangulator triangulator = new Triangulator();
-    triangulator.graph = mesh;
-    triangulator.dag = dag;
-
-    long id = Time.getNewTimeId();
-    int size = Math.min(300, Math.max(tuples.size() / 1000, 50));
-    ArrayList<Node<Element>> edge_list = new ArrayList<Node<Element>>(size);
-    ArrayList<Tuple> edgeEndPoints = new ArrayList<Tuple>(size);
-    ArrayList<Tuple> otherPoints = new ArrayList<Tuple>(size);
-
-    for (Tuple tuple : worklist) {
-      // split the triangle that the tuple falls in into three triangles
-      triangulator.initialize(tuple, edge_list, edgeEndPoints, otherPoints);
-      // Check list of edges and flip if necessary
-      triangulator.process_edges(tuple, edge_list, edgeEndPoints, otherPoints);
-    }
-
-    long time = Time.elapsedTime(id);
-    System.err.println("runtime: " + time + " ms");
-
-    if (isFirstRun && (args.length > 1)) {
-      verify(mesh);
-    }
-
-    isFirstRun = false;
-    return time;
+  @Override
+  protected String getVersion() {
+    return "handwritten serial";
   }
 
-
-  @SuppressWarnings("unchecked")
-  public static void verify(Object res) {
-    IndexedGraph<Element> result = (IndexedGraph<Element>) res;
-    if (!Verification.verify(result)) {
-      throw new IllegalStateException("triangulation failed.");
+  @Override
+  protected void triangulate(IndexedGraph<Element> mesh, Node<Element> largeNode) throws ExecutionException {
+    Stack<Node<Element>> worklist = new Stack<Node<Element>>();
+    worklist.add(largeNode);
+    Launcher.getLauncher().startTiming();
+    while (!worklist.isEmpty()) {
+      Node<Element> curr_node = worklist.pop();
+      if (curr_node.getData().processed) {
+        continue;
+      }
+      Cavity cavity = new Cavity(mesh, curr_node);
+      cavity.build();
+      List<Node<Element>> newNodes = cavity.update();
+      for (Node<Element> node : newNodes) {
+        if (node.getData().tuples != null) {
+          worklist.add(node);
+        }
+      }
     }
-    System.out.println("triangulation okay");
-    System.out.println();
+    Launcher.getLauncher().stopTiming();
+  }
+
+  @Override
+  protected IndexedGraph<Element> createGraph() {
+    return new ArrayIndexedGraph<Element>(3);
   }
 }

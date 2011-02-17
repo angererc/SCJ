@@ -1,38 +1,32 @@
-package benchmarks.lonestar.delaunay_triangulation;
 /*
-Lonestar Benchmark Suite for irregular applications that exhibit 
-amorphous data-parallelism.
+Galois, a framework to exploit amorphous data-parallelism in irregular
+programs.
 
-Center for Grid and Distributed Computing
-The University of Texas at Austin
-
-Copyright (C) 2007, 2008, 2009 The University of Texas at Austin
-
-Licensed under the Eclipse Public License, Version 1.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-http://www.eclipse.org/legal/epl-v10.html
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+Copyright (C) 2010, The University of Texas at Austin. All rights reserved.
+UNIVERSITY EXPRESSLY DISCLAIMS ANY AND ALL WARRANTIES CONCERNING THIS SOFTWARE
+AND DOCUMENTATION, INCLUDING ANY WARRANTIES OF MERCHANTABILITY, FITNESS FOR ANY
+PARTICULAR PURPOSE, NON-INFRINGEMENT AND WARRANTIES OF PERFORMANCE, AND ANY
+WARRANTY THAT MIGHT OTHERWISE ARISE FROM COURSE OF DEALING OR USAGE OF TRADE.
+NO WARRANTY IS EITHER EXPRESS OR IMPLIED WITH RESPECT TO THE USE OF THE
+SOFTWARE OR DOCUMENTATION. Under no circumstances shall University be liable
+for incidental, special, indirect, direct or consequential damages or loss of
+profits, interruption of business, or related expenses which may arise from use
+of Software or Documentation, including but not limited to those resulting from
+defects in Software and/or Documentation, or loss or inaccuracy of data of any
+kind.
 
 File: Element.java 
-*/
 
-import objects.graph.Node;
+ */
+package benchmarks.lonestar.delaunay_triangulation;
 
+import java.util.ArrayList;
 
-public class Element implements Comparable<Element> {
-
+public final class Element implements Comparable<Element> {
   public final Tuple[] coords;
   public final int dim;
-  public Node<Element> dagNode;
-  public Node<Element> graphNode;
-
+  public ArrayList<Tuple> tuples;
+  public boolean processed;
 
   public Element(Tuple a, Tuple b, Tuple c) {
     dim = 3;
@@ -40,25 +34,32 @@ public class Element implements Comparable<Element> {
     coords[0] = a;
     coords[1] = b;
     coords[2] = c;
+    processed = false;
   }
-
 
   public Element(Tuple a, Tuple b) {
     dim = 2;
     coords = new Tuple[2];
     coords[0] = a;
     coords[1] = b;
+    processed = false;
   }
 
+  /**
+   * get one tuple from the tuple list to insert into the mesh
+   */
+  protected Tuple sample() {
+    return tuples.get(tuples.size() - 1);
+  }
 
   @Override
   public int compareTo(Element e) {
-    if (lessThan(e))
+    if (lessThan(e)) {
       return -1;
-    else
+    } else {
       return 1;
+    }
   }
-
 
   public boolean lessThan(Element e) {
     if (dim < e.dim) {
@@ -79,7 +80,10 @@ public class Element implements Comparable<Element> {
     return false;
   }
 
-
+  /**
+   * sort the tuples(coordinates) of the triangle
+   * @return the sorted tuples, tuples[0] < tuples[1] < tuples[2]
+   */
   public Tuple[] getRotatedCoords() {
     if (dim == 3) {
       Tuple[] t = new Tuple[3];
@@ -116,7 +120,9 @@ public class Element implements Comparable<Element> {
 
   }
 
-
+  /**
+   * determine if a tuple is inside the triangle
+   */
   public boolean elementContains(Tuple p) {
     Tuple p1 = coords[0];
     Tuple p2 = coords[1];
@@ -153,16 +159,18 @@ public class Element implements Comparable<Element> {
     if (p3x < p2x) {
       if ((p3x < px) && (p2x >= px)) {
         if (((py - p3y) * (p2x - p3x)) < ((px - p3x) * (p2y - p3y))) {
-          if (count == 1)
+          if (count == 1) {
             return false;
+          }
           count++;
         }
       }
     } else {
       if ((p2x < px) && (p3x >= px)) {
         if (((py - p2y) * (p3x - p2x)) < ((px - p2x) * (p3y - p2y))) {
-          if (count == 1)
+          if (count == 1) {
             return false;
+          }
           count++;
         }
       }
@@ -171,16 +179,18 @@ public class Element implements Comparable<Element> {
     if (p1x < p3x) {
       if ((p1x < px) && (p3x >= px)) {
         if (((py - p1y) * (p3x - p1x)) < ((px - p1x) * (p3y - p1y))) {
-          if (count == 1)
+          if (count == 1) {
             return false;
+          }
           count++;
         }
       }
     } else {
       if ((p3x < px) && (p1x >= px)) {
         if (((py - p3y) * (p1x - p3x)) < ((px - p3x) * (p1y - p3y))) {
-          if (count == 1)
+          if (count == 1) {
             return false;
+          }
           count++;
         }
       }
@@ -189,7 +199,9 @@ public class Element implements Comparable<Element> {
     return count == 1;
   }
 
-
+  /**
+   * determine if the circumcircle of the triangle contains the tuple
+   */
   public boolean inCircle(Tuple p) {
     // This version computes the determinant of a matrix including the
     // coordinates of each points + distance of these points to the origin
@@ -219,9 +231,9 @@ public class Element implements Comparable<Element> {
     }
 
     // Compute the following determinant:
-    // | t1_x-p_x t1_y-p_y (t1_x-p_x)^2+(t1_y-p_y)^2 |
-    // | t2_x-p_x t2_y-p_y (t2_x-p_x)^2+(t2_y-p_y)^2 |
-    // | t3_x-p_x t3_y-p_y (t3_x-p_x)^2+(t3_y-p_y)^2 |
+    // | t1_x-p_x  t1_y-p_y  (t1_x-p_x)^2+(t1_y-p_y)^2 |
+    // | t2_x-p_x  t2_y-p_y  (t2_x-p_x)^2+(t2_y-p_y)^2 |
+    // | t3_x-p_x  t3_y-p_y  (t3_x-p_x)^2+(t3_y-p_y)^2 |
     //
     // If the determinant is >0 then the point (p_x,p_y) is inside the
     // circumcircle of the triangle (t1,t2,t3).
