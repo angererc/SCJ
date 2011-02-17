@@ -1,4 +1,4 @@
-package benchmarks.lonestar.delauny_triangulation;
+package benchmarks.lonestar.delaunay_triangulation;
 /*
 Lonestar Benchmark Suite for irregular applications that exhibit 
 amorphous data-parallelism.
