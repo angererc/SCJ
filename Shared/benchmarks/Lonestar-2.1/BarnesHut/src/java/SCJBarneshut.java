@@ -231,7 +231,7 @@ private void ReadInput(String filename) {
       System.err.println("Copyright (C) 2007, 2008, 2009 The University of Texas at Austin");
       System.err.println("http://iss.ices.utexas.edu/lonestar/");
       System.err.println();
-      System.err.println("application: BarnesHut (xsched version)");
+      System.err.println("application: BarnesHut (SCJ version)");
       System.err.println("Simulation of the gravitational forces in a galactic");
       System.err.println("cluster using the Barnes-Hut n-body algorithm");
       System.err.println("http://iss.ices.utexas.edu/lonestar/barneshut.html");
