@@ -1,0 +1,219 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xml:lang="en" version="-//W3C//DTD XHTML 1.1//EN" xmlns="http://www.w3.org/1999/xhtml"><head>
+
+
+  
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link rel="stylesheet" type="text/css" href="delaunaytriangulation_files/layout.css">
+    <link rel="stylesheet" type="text/css" href="delaunaytriangulation_files/style.css">
+    <link rel="stylesheet" type="text/css" href="delaunaytriangulation_files/boxes.css">
+
+    <title>The Lonestar Benchmark Suite -- Delaunay Triangulation</title>
+    
+  </head><body>
+
+    <div> 
+      <div>
+
+        <div id="main">
+          <div id="topbar"> 
+            <element><a href="http://iss.ices.utexas.edu/">ISS Home</a></element>
+            <element><a href="http://iss.ices.utexas.edu/lonestar/index.html">&gt;&nbsp;Lonestar</a></element>
+            <element><a href="http://iss.ices.utexas.edu/lonestar/description.html">&gt;&nbsp;description</a></element>
+            <element><a href="http://iss.ices.utexas.edu/lonestar/delaunaytriangulation.html">&gt;&nbsp;Delaunay&nbsp;triangulation</a></element>
+          </div>
+	  <div id="linkbar">
+	    <element><a href="http://iss.ices.utexas.edu/lonestar/index.html">Main</a></element>
+	    <element><a href="http://iss.ices.utexas.edu/lonestar/description.html">Description</a></element> 
+	    <element><a href="http://iss.ices.utexas.edu/lonestar/download.html">Download</a></element>
+	    <element><a href="http://iss.ices.utexas.edu/lonestar/contributors.html">Contributors</a></element>
+	  </div>
+          <br><br><br>
+	        <!-- <img src="star.png"><h1>The Lonestar Benchmark Suite</h1> -->                  
+                <div id="header">
+                  <h2>Delaunay Triangulation</h2>
+                </div>
+                <br>
+                </div>
+
+                <div id="content">
+
+                  <div class="section">
+                    <h1>Application Description</h1>
+                    <p>
+                      This benchmark produces a Delaunay triangulation from a
+                      given a set of points.  It implements the algorithm
+                      proposed by Guibas et al. [1].  The data parallelism in
+                      this algorithm arises from the worklist of points that
+                      must be inserted into the mesh.
+                    </p>
+                    <span class="reference">
+                      [1] Leonidas J. Guibas, Donald E. Knuth and Micha
+                      Sharir. Randomized Incremental Construction of Delaunay
+                      and Voronoi Diagrams. Algorithmica, 7(1):381-413, December
+                      1992.
+                    </span>
+                  </div>
+
+                  <div class="section">
+                    <h1>Algorithm</h1>
+                    <p>
+                      A 2D Delaunay mesh is a triangulation of a set of points
+                      with the following property: the circumcircle of any
+                      triangle in the mesh must contain no other point from the
+                      mesh.  The algorithm takes as input a set of 2D points
+                      contained inside a surrounding triangle.  It iteratively
+                      builds the Delaunay mesh by inserting a new point and
+                      re-triangulating the affected portions of the mesh.  The
+                      output is a Delaunay triangulation in which the set of
+                      vertices is equal to the set of input points.
+                    </p>
+                    <p> The algorithm proceeds as follows.  A worklist is
+                      initialized with the points to be inserted, and the mesh
+                      is initialized with a single, large triangle encompassing
+                      all the points.  In each step, the triangulation procedure
+                      (i) picks a new point from the worklist, (ii) determines
+                      which triangle contains the point, (iii) splits this
+                      triangle into three new triangles that share the point,
+                      and (iv) re-triangulates the neighborhood.  The order in
+                      which the points are processed is irrelevant, all orders
+                      lead to the same valid Delaunay mesh.
+                    </p>
+
+                    <div class="fig" style="float: right; margin-left: 30px; width: 320px;">
+                      <div class="pseudocode">
+                        <pre>  1: Mesh m = /* initialize with one 
+  surrounding triangle */
+  2: Set<point> points = /* read  points to insert */
+  3: Worklist wl;
+  4: wl.add(points);
+  5: foreach Point p in wl {
+  6:   Triangle t = m.surrounding(p);
+  7:   Triangle newSplit[3] = m.splitTriangle(t, p);
+  8:   Worklist wl2;
+  9:   wl2.add(edges(newSplit));
+  10:   for each Edge e in wl2 {
+  11:     if (!isDelaunay(e)) {
+  12:       Triangle newFlipped[2] =  m.flipEdge(e);
+  13:       wl2.add(edges(newFlipped))
+  14:     }
+  15:   }
+  16: }</point></pre>
+                        </div>
+                        <span class="caption">
+                          Figure 1: Pseudocode for Delaunay triangulation 
+                        </span>
+                      </div>
+
+                      <p> In more detail, the algorithm proceeds as follows
+                        (pseudocode is provided in Figure 1).  After
+                        initializing the initial mesh with one surrounding
+                        triangle (line 1), a worklist is initialized with the
+                        set of input points (lines 2-4).  For each
+                        point <i>p</i> in the worklist (line 5), the
+                        triangle <i>t</i> that contains <i>p</i> is retrieved
+                        (line 6).  Then <i>t</i> is split into three new
+                        triangles such that they share the point <i>p</i> (line
+                        7).  Because these new triangles may not satisfy the
+                        Delaunay property, a procedure called <i>edge
+                        flipping</i> is applied to restore the Delaunay property
+                        (lines 9-15).  If any edge of the newly created
+                        triangles is non-Delaunay, the edge is flipped, removing
+                        the two non-Delaunay triangles and replacing them with
+                        two new triangles (line 12).  The edges of these newly
+                        created triangles are examined in turn (line 13).  Thus,
+                        at the end of each iteration of the outer loop, the
+                        resulting mesh is once again a Delaunay mesh.  The order
+                        of processing is irrelevant in this algorithm, so
+                        the <i>foreach</i> in line 5 iterates over an unordered
+                        set.
+                      </p>
+                    </div>
+
+                    <div class="section">
+                      <h1>Data Structures</h1>
+                      There are three key data structures used in Delaunay triangulation:
+                      <ul>
+                        <li><h3>Unordered Set</h3>: The worklist used to hold
+                        the 2D points is represented as an unordered set.</li>
+                        <li><h3>Graph</h3>: The mesh is represented as a graph.
+                          The triangles in the mesh are represented as nodes in
+                          the graph, and triangle adjacency is expressed through
+                          edges between nodes.</li>
+                        <li><h3>History DAG</h3>: To efficiently locate the
+                          triangle containing a given point, a data structure
+                          called <i>history DAG</i> is used, which behaves like
+                          a ternary search tree.  After each step of the
+                          algorithm, the leaves represent the triangles in the
+                          current mesh.  Splitting a triangle (line 9) adds
+                          three children to the data structure corresponding to
+                          the three newly created triangles.  When an edge is
+                          flipped (line 12), the two new triangles are children
+                          of both old triangles, so the data structure is a DAG
+                          in general rather than a tree.  With this structure
+                          finding the triangle containing a point is equivalent
+                          to traversing the history DAG from the root to the
+                          corresponding leaf.
+                        </li>
+                      </ul></div>
+
+                      <div class="section">
+                        <h1>Parallelism</h1>
+                        <p>
+                          The active nodes in Delaunay triangulation are the
+                          points to be inserted into the mesh, which can be
+                          processed in any order.  Processing a point requires
+                          splitting a triangle and then flipping some set of
+                          edges; the affected triangles are in the point's
+                          neighborhood.  Because these neighborhoods are
+                          typically small connected regions of the mesh,
+                          significant parallelism can be achieved by inserting
+                          multiple points in parallel, provided the points
+                          affect triangles that are far enough apart in the
+                          mesh.  Conflicts between concurrently executing
+                          insertions occur (both in the graph and the history
+                          DAG) when neighborhoods overlap.  This is manifested
+                          in the algorithm by multiple update operations (lines
+                          9-15) attempting to manipulate the same triangles.
+                        </p>
+                        <p>
+                          Figures 2 and 3 show the available parallelism and the
+                          parallelism intensity of Delaunay triangulation,
+                          respectively, for a random input consisting of 80,000
+                          points. Delaunay Triangulation is a graph refinement
+                          code. Point insertion removes a subgraph from the
+                          graph (representing the triangle that will be split,
+                          as well as any triangles affected by edge-flipping
+                          actions) and replaces it with a larger subgraph (the
+                          three triangles formed as the result of the splitting,
+                          as well as the triangles created after
+                          edge-flipping). At the beginning of the computation,
+                          there is effectively no parallelism because the
+                          initial mesh is very small, consisting of a single
+                          triangle. Then, the available parallelism increases as
+                          the size of the graph increases until the algorithm
+                          starts running out of work. The parallelism intensity
+                          increases steadily as the work in our random input is
+                          uniformly distributed and the growing graph supports
+                          more and more simultaneous updates.
+                        </p>
+                      </div>
+
+                      <div class="fig" style="border: 0px none ; width: 500px;">
+                        <img src="delaunaytriangulation_files/dt_002.png"><br>
+                            <span class="caption">Figure 2: Available parallelism in Delaunay triangulation</span>
+                          </div>
+                          <div class="fig" style="border: 0px none ; width: 500px;">
+                            <img src="delaunaytriangulation_files/dt.png"><br>
+                                <span class="caption">Figure 3: Parallelism intensity of Delaunay triangulation</span>
+                              </div>
+
+                            </div>
+                          <div id="footer">
+                            This project is a joint effort between the University of Texas at Austin and IBM Corporation<br>
+                            (C) 2007, 2008, 2009 The University of Texas at Austin
+                          </div>
+                        </div>
+                      </div>
+                      
+                    </body></html>
