@@ -2,7 +2,10 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="Shared/src"/>
+	<classpathentry kind="src" path="Shared/benchmarks/Lonestar-2.1/common"/>
+	<classpathentry kind="src" path="Shared/benchmarks/Lonestar-2.1/BarnesHut/src/java"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="Shared/libs/javassist.jar"/>
+	<classpathentry kind="lib" path="Shared/libs/jsr166y.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

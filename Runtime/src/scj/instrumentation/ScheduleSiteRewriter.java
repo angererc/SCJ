@@ -6,6 +6,7 @@ import java.lang.instrument.IllegalClassFormatException;
 import java.security.ProtectionDomain;
 
 import scj.Task;
+import scj.Runtime;
 
 import javassist.CannotCompileException;
 import javassist.ClassPool;
@@ -33,12 +34,12 @@ public class ScheduleSiteRewriter implements ClassFileTransformer {
 			@Override
 			public void edit(MethodCall m) throws CannotCompileException {
 				if(m.getMethodName().startsWith(Task.MainTaskMethodPrefix)) {
-					String statement = "{ xsched.Runtime.scheduleMainTask($0, \"" + m.getMethodName() + "\", $args); }";							
+					String statement = "{ " + Runtime.ScheduleMainTaskMethod + "($0, \"" + m.getMethodName() + "\", $args); }";							
 					if(Task.DEBUG)
 						System.out.println("found schedule site: " + m.getMethodName() + " in " + method.getLongName() + "; replacing it with " + statement);
 					m.replace(statement);
 				} else if (m.getMethodName().startsWith(Task.NormalTaskMethodPrefix)) {
-					String statement = "{ xsched.Runtime.scheduleNormalTask($0, \"" + m.getMethodName() + "\", $args); }";
+					String statement = "{ " + Runtime.ScheduleNormalTaskMethod + "($0, \"" + m.getMethodName() + "\", $args); }";
 					if(Task.DEBUG)
 						System.out.println("found schedule site: " + m.getMethodName() + " in  " + method.getLongName() + "; replacing it with " + statement);
 					m.replace(statement);

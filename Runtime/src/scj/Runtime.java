@@ -1,6 +1,9 @@
 package scj;
 
 public final class Runtime {
+	
+	public static final String ScheduleMainTaskMethod = Runtime.class.getCanonicalName() + ".scheduleMainTask";
+	public static final String ScheduleNormalTaskMethod = Runtime.class.getCanonicalName() + ".scheduleNormalTask";
 
 	public static void scheduleMainTask(Object receiver, String taskName, Object[] args) {
 		assert taskName.startsWith(Task.MainTaskMethodPrefix);

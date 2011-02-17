@@ -1,0 +1,182 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xml:lang="en" version="-//W3C//DTD XHTML 1.1//EN" xmlns="http://www.w3.org/1999/xhtml"><head>
+
+
+  
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link rel="stylesheet" type="text/css" href="barneshut_files/layout.css">
+    <link rel="stylesheet" type="text/css" href="barneshut_files/style.css">
+    <link rel="stylesheet" type="text/css" href="barneshut_files/boxes.css">
+
+    <title>The Lonestar Benchmark Suite -- Barnes-Hut N-Body Simulation</title>
+    
+  </head><body>
+
+    <div> 
+      <div>
+        <div id="main">
+          <div id="topbar"> 
+            <element><a href="http://iss.ices.utexas.edu/">ISS Home</a></element>
+            <element><a href="http://iss.ices.utexas.edu/lonestar/index.html">&gt;&nbsp;Lonestar</a></element>
+            <element><a href="http://iss.ices.utexas.edu/lonestar/description.html">&gt;&nbsp;description</a></element>
+            <element><a href="http://iss.ices.utexas.edu/lonestar/barneshut.html">&gt;&nbsp;Barnes&nbsp;Hut</a></element>
+          </div>
+	  <div id="linkbar">
+	    <element><a href="http://iss.ices.utexas.edu/lonestar/index.html">Main</a></element>
+	    <element><a href="http://iss.ices.utexas.edu/lonestar/description.html">Description</a></element> 
+	    <element><a href="http://iss.ices.utexas.edu/lonestar/download.html">Download</a></element>
+	    <element><a href="http://iss.ices.utexas.edu/lonestar/contributors.html">Contributors</a></element>
+	  </div>
+          <br><br><br>
+	        <!-- <img src="star.png"><h1>The Lonestar Benchmark Suite</h1> -->                  
+                <div id="header">
+                  <h2>Barnes Hut</h2>
+                </div>
+                <br>
+                </div>
+
+                <div id="content">
+                  <div class="section">
+                    <h1>Application Description</h1>
+                    <p>
+                      This benchmark simulates the gravitational forces acting
+                      on a galactic cluster using the Barnes-Hut <i>n</i>-body
+                      algorithm [1]. The positions and velocities of
+                      the <i>n</i> galaxies are initialized according to the
+                      empirical Plummer model. The program calculates the motion
+                      of each galaxy through space for a number of time
+                      steps. The data parallelism in this algorithm arises
+                      primarily from the independent force calculations.
+                    </p>
+                    <span class="reference">
+                      [1] J. Barnes and P. Hut. A hierarchical O(N log N)
+                      force-calculation algorithm. Nature, 324(4):446-449,
+                      December 1986.
+                    </span>
+                  </div>
+
+                  <div class="section">
+                    <h1>Algorithm</h1>
+                    <p>
+                      Barnes-Hut's force-calculation algorithm employs a
+                      hierarchical data structure, called an octree, to
+                      approximately compute the force (e.g., gravitational,
+                      electric, or magnetic force) that the <i>n</i> bodies in
+                      the system induce upon each other. With <i>n</i> bodies,
+                      O(<i>n</i><sup>2</sup>) interactions need to be
+                      considered, i.e., the precise calculation is quadratic in
+                      the number of bodies. The Barnes-Hut algorithm
+                      hierarchically partitions the volume around the <i>n</i>
+                      bodies into successively smaller cells.  Each cell forms
+                      an internal node of the octree and summarizes information
+                      about the bodies it contains, in particular their combined
+                      mass and center of gravity.  The leaves of the octree are
+                      the individual bodies.  This hierarchy reduces the time to
+                      calculate the force on the <i>n</i> bodies to O(<i>n</i>
+                      log <i>n</i>) because, for cells that are sufficiently far
+                      away, it suffices to perform only one force calculation
+                      with the cell instead of performing one calculation with
+                      every body inside the cell.  For example, consider the
+                      two-dimensional hierarchical subdivision of space in
+                      Figure 1.  Sometime during the force calculation of the
+                      galaxy that is the source of the arrows, the algorithm
+                      will check whether the red cell's center of gravity (red
+                      circle) is far enough away.  Because it is not, the code
+                      proceeds to look at all subcells and performs the force
+                      calculations marked by the green arrows.  When the
+                      algorithm considers the orange cell, however, it will find
+                      that this cell is sufficiently far away and will therefore
+                      only perform one force calculation (orange arrow) and
+                      will <i>not</i> look deeper into this cell (blue arrows).
+                    </p>
+                    <div class="fig" style="border: 0px none ; width: 300px; float: right;">
+                      <img src="barneshut_files/octree.png"><br>
+                      <span class="caption">Figure 1: Hierarchical force calculation example</span>
+                    </div>
+                    <p>
+                      In more detail, the algorithm proceeds as follows
+                      (pseudocode is provided in Figure 2).  First, the list of
+                      bodies is initialized with the starting location and
+                      velocity of each body (line 1). Then the code iterates
+                      over the time steps (line 2).  In each iteration, a new
+                      octree (i.e., spatial hierarchy) is generated by inserting
+                      all bodies (lines 3 - 6).  Then the cumulative mass and
+                      center of mass of each cell is recursively computed (line
+                      7). Next, the force acting upon each body is computed
+                      (lines 8 - 10) by traversing the octree.  The traversal
+                      along any path is terminated as soon as a leaf node (i.e.,
+                      a body) or an internal node (i.e., a cell) that is far
+                      enough away is encountered.  Finally, each body's position
+                      and velocity are updated based on the computed force
+                      (lines 11 - 13).
+                    </p>
+
+                    <div class="fig" style="width: 225px; margin-left: 30px; float: right;">
+                      <div class="pseudocode">
+                        <pre> 1: List bodylist = ...
+ 2: foreach timestep do {
+ 3:   Octree octree;
+ 4:   foreach Body b in bodylist {
+ 5:     octree.Insert(b);
+ 6:   }
+ 7:   octree.SummarizeSubtrees();
+ 8:   foreach Body b in bodylist {
+ 9:     b.ComputeForce(octree);
+ 10:   }
+ 11:   foreach Body b in bodylist {
+ 12:     b.Advance();
+ 13:   }
+ 14: } </pre>
+                      </div>
+                      <span class="caption">
+                        Figure 2: Pseudocode for Barnes-Hut
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="section">
+                    <h1>Data Structures</h1>
+                    There are two key data structures used in Barnes-Hut:
+                    <ul>
+                      <li><h3>Unordered list</h3>: The bodies are stored in an
+                        unordered list as they can be processed in any
+                        order. Once initialized, the list does not change. Only
+                        the bodies' attributes are modified in each time
+                        step.</li>
+                      <li><h3>Octree</h3>: The spatial hierarchy is represented
+                        by an octree (the 3-dimensional equivalent of a binary
+                        tree), where each node has up to eight children.  The
+                        leaves of the octree correspond to individual bodies
+                        whereas the internal nodes represent cells that contain
+                        multiple spatially nearby bodies.</li>
+                    </ul></div>
+
+                    <div class="section">
+                      <h1>Parallelism</h1>
+                      <p>
+                        While many phases of Barnes-Hut can be parallelized
+                        (including building the octree and calculating the
+                        summary information), we focus on parallelizing the
+                        force-computation step, which consumes the vast majority
+                        of the runtime.  The active nodes in this step are the
+                        bodies. Calculating the force on each body requires
+                        reading some portion of the octree, so the accessed
+                        nodes form the body's neighborhood.  Because these
+                        accesses are read-only, the bodies can be processed in
+                        any order and in parallel, provided that a body does not
+                        update its position or velocity until all force
+                        computations are complete.  For data locality reasons,
+                        it may be beneficial to process spatially close bodies
+                        together.
+                      </p>
+                    </div>
+
+                  </div>
+                
+                <br>  
+                <div id="footer">
+                  This project is a joint effort between the University of Texas at Austin and IBM Corporation<br>
+                    (C) 2007, 2008, 2009 The University of Texas at Austin
+                  </div>
+                </div>
+                </div></body></html>

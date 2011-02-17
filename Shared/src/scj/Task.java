@@ -2,22 +2,25 @@ package scj;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public final class Task<R> implements Runnable {
+import jsr166y.ForkJoinPool;
+import jsr166y.Phaser;
+import jsr166y.RecursiveAction;
+
+public final class Task<R> extends RecursiveAction {
 	
 	public static boolean DEBUG = false;
 	public static boolean CHECK_WELLFORMEDNESS = true;
 	
-	public static final String MainTaskMethodPrefix = "xschedMainTask_";
-	public static final String NormalTaskMethodPrefix = "xschedTask_";
+	public static final String MainTaskMethodPrefix = "scjMainTask_";
+	public static final String NormalTaskMethodPrefix = "scjTask_";
 	
 	//we use our own thread pool that shuts down automatically once the worklist is empty
-	static ExecutorService Pool = null; //Executors.newCachedThreadPool();
+	static ForkJoinPool Pool = null; //Executors.newCachedThreadPool();
+	static Phaser Phaser = null;
+	
 	//the task that is currently executing in this thread
 	static final ThreadLocal<Task<?>> Now = new ThreadLocal<Task<?>>();
 	
@@ -80,30 +83,19 @@ public final class Task<R> implements Runnable {
 			this.retainCount.set(0);
 			if(DEBUG)
 				System.out.println("scheduled main task " + this);
-			Pool = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>()) {
-
-				private final AtomicInteger executing = new AtomicInteger(0);
-				
-				@Override
-				public void execute(Runnable command) {
-					executing.incrementAndGet();
-					super.execute(command);
-				}
-
-
-				@Override
-				protected void afterExecute(Runnable r, Throwable t) {
-					super.afterExecute(r, t);
-					int count = executing.decrementAndGet();
-					if(count == 0) {
-						this.shutdown();
-					}
-				}
-				
-			};
-			Pool.execute(this);
+			Phaser = new Phaser();
+			Pool = new ForkJoinPool();
+			
+			Phaser.register();
+			
+			Pool.invoke(this);
+						
+			Phaser.arriveAndAwaitAdvance();
+			Phaser = null;
+			
+			Pool.shutdown();
 			Pool.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
-			Pool = null;
+			Pool = null;			
 			
 		} catch (Exception e) {
 			Pool.shutdownNow();
@@ -257,7 +249,8 @@ public final class Task<R> implements Runnable {
 		if(CHECK_WELLFORMEDNESS && !Now.get().isOrderedBefore(later))
 			throw new RuntimeException("Now must happen before right hand side of HB edge: " + Now.get() + ": " + this + "->" + later);
 		
-		assert(later.isInFuture()) : "rhs of happens-before must be in future";
+		if(CHECK_WELLFORMEDNESS)
+			assert(later.isInFuture()) : "rhs of happens-before must be in future";
 		
 		if(!this.hasRetired()) {			
 			this.retain_unsynchronized(later);
@@ -271,13 +264,15 @@ public final class Task<R> implements Runnable {
 		for(Task<?> succ : this.retainedTasks) {
 			int count = succ.retainCount.decrementAndGet();
 			if(count == 0) {
-				Pool.execute(succ);
+				succ.fork();				
 			}
 		}
 	}
 	
 	@Override
-	public void run() {
+	public void compute() {
+		Phaser.register();
+		
 		assert(this.retainCount.get() == 0) : "retain count must be 0 but was " + this.retainCount;
 		
 		this.retainCount.set(EXECUTING);
@@ -308,6 +303,8 @@ public final class Task<R> implements Runnable {
 			//we are just clearing the array lists to avoid keeping everything alive when only retaining one task
 			if(!DEBUG)
 				this.retainedTasks = null;
+			
+			Phaser.arrive();
 		}
 	}
 	
