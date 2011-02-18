@@ -134,7 +134,7 @@ public abstract class ReplayFeature {
 
   public void onCreateReplayable(Replayable obj) {
     // checkValidity();
-    if (GaloisRuntime.getRuntime().inRoot()) {
+    if (FullGaloisRuntime.getFullRuntime().inRoot()) {
       setNextRid(obj);
     } else {
       Iteration it = Iteration.getCurrentIteration();

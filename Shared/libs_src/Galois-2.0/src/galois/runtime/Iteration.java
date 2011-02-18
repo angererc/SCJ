@@ -98,6 +98,7 @@ public class Iteration {
    */
   public static Iteration acquire(Lockable lockable, byte flags) {
     Iteration it = null;
+    
     if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.CHECK_CONFLICT)) {
       it = Iteration.getCurrentIteration();
       it.acquire(lockable);

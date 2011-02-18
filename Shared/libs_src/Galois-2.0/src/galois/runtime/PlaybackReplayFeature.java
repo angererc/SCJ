@@ -256,7 +256,7 @@ class PlaybackReplayFeature<T> extends ReplayFeature implements Executor, Foreac
   @Override
   public void onCreateReplayable(Replayable item) {
     checkValidity();
-    if (GaloisRuntime.getRuntime().inRoot()) {
+    if (FullGaloisRuntime.getFullRuntime().inRoot()) {
       setNextRid(item);
     } else {
       setNextRid(null, iterationId, item);

@@ -12,10 +12,10 @@ public abstract class GaloisRuntime {
 
 	public abstract boolean useSerial();
 	
-	public abstract boolean needMethodFlag(byte flags, byte saveUndo);
+	public abstract boolean needMethodFlag(byte flags, byte option);
 	
 	public abstract void onUndo(Iteration it, Callback callback);
-	public abstract boolean inRoot();
+	
 	public abstract void onCommit(Iteration currentIteration, Callback callback);
 	public abstract int getMaxThreads();
 	public abstract boolean ignoreUserFlags();

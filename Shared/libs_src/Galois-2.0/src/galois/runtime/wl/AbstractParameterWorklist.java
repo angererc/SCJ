@@ -21,6 +21,7 @@ kind.
 package galois.runtime.wl;
 
 import galois.runtime.Callback;
+import galois.runtime.FullGaloisRuntime;
 import galois.runtime.GaloisRuntime;
 import galois.runtime.Iteration;
 
@@ -72,7 +73,7 @@ public abstract class AbstractParameterWorklist<T, S> implements ParameterWorkli
   @Override
   public void add(T x) {
     final S wx = wrap(x);
-    if (GaloisRuntime.getRuntime().inRoot()) {
+    if (FullGaloisRuntime.getFullRuntime().inRoot()) {
       current.add(wx);
     } else {
       GaloisRuntime.getRuntime().onCommit(Iteration.getCurrentIteration(), new Callback() {

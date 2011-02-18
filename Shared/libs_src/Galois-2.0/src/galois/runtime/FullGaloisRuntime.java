@@ -625,7 +625,6 @@ public final class FullGaloisRuntime extends GaloisRuntime {
 		return ignoreUserFlags;
 	}
 
-	@Override
 	public boolean inRoot() {
 		checkValidity();
 		return current.executor == root;

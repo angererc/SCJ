@@ -22,6 +22,7 @@ File: AccumulatorBuilder.java
 package galois.objects;
 
 import galois.runtime.Callback;
+import galois.runtime.FullGaloisRuntime;
 import galois.runtime.GaloisRuntime;
 import galois.runtime.Iteration;
 
@@ -35,89 +36,89 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class AccumulatorBuilder {
 
-  public Accumulator create() {
-    return create(0);
-  }
+	public Accumulator create() {
+		return create(0);
+	}
 
-  public Accumulator create(int value) {
-    if (GaloisRuntime.getRuntime().useSerial())
-      return new SerialAccumulator(value);
-    else
-      return new ConcurrentAccumulator(value);
-  }
+	public Accumulator create(int value) {
+		if (GaloisRuntime.getRuntime().useSerial())
+			return new SerialAccumulator(value);
+		else
+			return new ConcurrentAccumulator(value);
+	}
 
-  private static class SerialAccumulator implements Accumulator {
-    private int value;
+	private static class SerialAccumulator implements Accumulator {
+		private int value;
 
-    public SerialAccumulator(int v) {
+		public SerialAccumulator(int v) {
 
-    }
+		}
 
-    @Override
-    public final void add(int delta) {
-      add(delta, MethodFlag.ALL);
-    }
+		@Override
+		public final void add(int delta) {
+			add(delta, MethodFlag.ALL);
+		}
 
-    @Override
-    public void add(final int delta, byte flags) {
-      value += delta;
-    }
+		@Override
+		public void add(final int delta, byte flags) {
+			value += delta;
+		}
 
-    @Override
-    public int get() {
-      return value;
-    }
+		@Override
+		public int get() {
+			return value;
+		}
 
-    @Override
-    public void set(int v) {
-      value = v;
-    }
+		@Override
+		public void set(int v) {
+			value = v;
+		}
 
-    @Override
-    public void access(byte flags) {
-    }
-  }
+		@Override
+		public void access(byte flags) {
+		}
+	}
 
-  private static class ConcurrentAccumulator implements Accumulator {
-    private AtomicInteger value;
+	private static class ConcurrentAccumulator implements Accumulator {
+		private AtomicInteger value;
 
-    public ConcurrentAccumulator(int v) {
-      value = new AtomicInteger(v);
-    }
+		public ConcurrentAccumulator(int v) {
+			value = new AtomicInteger(v);
+		}
 
-    @Override
-    public final void add(int delta) {
-      add(delta, MethodFlag.ALL);
-    }
+		@Override
+		public final void add(int delta) {
+			add(delta, MethodFlag.ALL);
+		}
 
-    @Override
-    public void add(final int delta, byte flags) {
-      if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
-        Iteration it = Iteration.getCurrentIteration();
-        if (it != null)
-          GaloisRuntime.getRuntime().onUndo(it, new Callback() {
-            public void call() {
-              value.addAndGet(-delta);
-            }
-          });
-      }
-      value.addAndGet(delta);
-    }
+		@Override
+		public void add(final int delta, byte flags) {
+			if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
+				Iteration it = Iteration.getCurrentIteration();
+				if (it != null)
+					GaloisRuntime.getRuntime().onUndo(it, new Callback() {
+						public void call() {
+							value.addAndGet(-delta);
+						}
+					});
+			}
+			value.addAndGet(delta);
+		}
 
-    @Override
-    public int get() {
-      assert GaloisRuntime.getRuntime().inRoot();
-      return value.get();
-    }
+		@Override
+		public int get() {
+			assert (GaloisRuntime.getRuntime() instanceof FullGaloisRuntime) && FullGaloisRuntime.getFullRuntime().inRoot();
+			return value.get();
+		}
 
-    @Override
-    public void set(int v) {
-      assert GaloisRuntime.getRuntime().inRoot();
-      value.set(v);
-    }
+		@Override
+		public void set(int v) {
+			assert (GaloisRuntime.getRuntime() instanceof FullGaloisRuntime) && FullGaloisRuntime.getFullRuntime().inRoot();
+			value.set(v);
+		}
 
-    @Override
-    public void access(byte flags) {
-    }
-  }
+		@Override
+		public void access(byte flags) {
+		}
+	}
 }

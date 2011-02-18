@@ -1,5 +1,6 @@
 package galois_scj;
 
+import galois.objects.MethodFlag;
 import galois.runtime.Callback;
 import galois.runtime.GaloisRuntime;
 import galois.runtime.Iteration;
@@ -20,15 +21,17 @@ public class ReducedGaloisRuntime extends GaloisRuntime {
 			instance.invalidate();
 		}
 
-		instance = new ReducedGaloisRuntime(useSerial, ignoreUserFlags);
+		instance = new ReducedGaloisRuntime(useSerial, ignoreUserFlags, MethodFlag.NONE);
 	}
 
 	private final boolean useSerial;
 	private final boolean ignoreUserFlags;
+	private final byte mask;
 	
-	private ReducedGaloisRuntime(boolean useSerial, boolean ignoreUserFlags) {
+	private ReducedGaloisRuntime(boolean useSerial, boolean ignoreUserFlags, byte mask) {
 		this.useSerial = useSerial;
 		this.ignoreUserFlags = ignoreUserFlags;
+		this.mask = mask;
 	}
 
 	@Override
@@ -37,19 +40,13 @@ public class ReducedGaloisRuntime extends GaloisRuntime {
 	}
 	
 	@Override
-	public boolean needMethodFlag(byte flags, byte saveUndo) {
-		throw new RuntimeException("no idea what to do here");
+	public boolean needMethodFlag(byte flags, byte option) {
+		return ((flags & mask) & option) != 0;
 	}
 
 	@Override
 	public void onUndo(Iteration it, Callback callback) {
 		it.addUndoAction(callback);
-	}
-
-	@Override
-	public boolean inRoot() {
-		// TODO Auto-generated method stub
-		return false;
 	}
 
 	@Override

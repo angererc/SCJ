@@ -33,6 +33,7 @@ import galois.runtime.wl.ChunkedFIFO;
 import galois.runtime.wl.FIFO;
 import galois.runtime.wl.Priority;
 import galois_scj.GaloisSCJ;
+import galois_scj.ReducedGaloisRuntime;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -437,7 +438,9 @@ public final class SCJMain {
 	static OctTreeNodeData res;
 	
 	public static void main(String args[]) throws Exception {
-		FullGaloisRuntime.initialize(2, false, false, ReplayFeature.Type.NO, false, false);
+		ReducedGaloisRuntime.initialize(false, false);
+		//FullGaloisRuntime.initialize(2, false, false, ReplayFeature.Type.NO, false, false);
+		
 		if (Launcher.getLauncher().isFirstRun()) {
 			System.err.println("Lonestar Benchmark Suite v3.0");
 			System.err.println("Copyright (C) 2007, 2008, 2009, 2010 The University of Texas at Austin");
