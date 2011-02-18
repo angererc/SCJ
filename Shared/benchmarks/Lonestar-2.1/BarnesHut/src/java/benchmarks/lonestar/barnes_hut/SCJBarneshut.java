@@ -302,12 +302,13 @@ private void ReadInput(String filename) {
       
       runtime += Time.elapsedTime(id);
       for (int i = 0; i < nbodies; i++) {
-        Task<Void> advanceBody = new Task<Void>();
+    	Task<Void> advanceBody = new Task<Void>();
   	  	this.scjTask_advanceBody(advanceBody, i);
   	  	
   	  	join.hb(advanceBody);
-  	  	if(nextStep != null)
-  	  		advanceBody.hb(nextStep);
+  	  	if(nextStep != null) {
+  	  		advanceBody.hb(nextStep);  	  		
+  	  	}
       }
   }
   
