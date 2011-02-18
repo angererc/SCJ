@@ -146,7 +146,7 @@ class OrderedIteration<T> extends Iteration {
    * the new Iteration
    */
   @Override
-  Iteration recycle() {
+  public Iteration recycle() {
     reset();
     return this;
   }

@@ -2,10 +2,15 @@ package galois_scj;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
+import util.fn.LambdaVoid;
+
+import galois.objects.Mappable;
+import galois.runtime.AbstractExecutorContext;
 import galois.runtime.Callback;
 import galois.runtime.Features;
 import galois.runtime.ForeachContext;
@@ -39,6 +44,33 @@ public class GaloisSCJComputation<T> {
 		lock = new ReentrantLock();
 		moreWork = lock.newCondition();
 		suspendThunks = new ArrayDeque<Callback>();
+	}
+	
+	public void initializeWorklist(Iterable<T> initial)
+	throws ExecutionException {
+		final ForeachContext<T> ctx = new SimpleContext<T>(numTasks);
+
+		for (T item : initial) {
+			worklist.addInitial(item, ctx);
+		}
+		worklist.finishAddInitial();
+	}
+	
+	public void initializeWorklist(Mappable<T> mappable)
+	throws ExecutionException {
+		final ForeachContext<T> ctx = new SimpleContext<T>(numTasks);
+
+		mappable.map(new LambdaVoid<T>() {
+			@Override
+			public void call(T item) {
+				worklist.addInitial(item, ctx);
+			}
+		});
+		worklist.finishAddInitial();
+	}
+	
+	public int getNumTasks() {
+		return this.numTasks;
 	}
 
 	Iteration newIteration(Iteration prev, int tid) {
@@ -98,5 +130,28 @@ public class GaloisSCJComputation<T> {
 
 	synchronized void addSuspendThunk(Callback callback) {
 		suspendThunks.add(callback);
+	}
+	
+	/*
+	 * 
+	 */
+	
+	private static class SimpleContext<S> extends AbstractExecutorContext<S> {
+		private final int maxThreads;
+		private final AtomicInteger current = new AtomicInteger();
+
+		public SimpleContext(int maxThreads) {
+			this.maxThreads = maxThreads;
+		}
+
+		@Override
+		public int getThreadId() {
+			return current.getAndIncrement() % maxThreads;
+		}
+
+		@Override
+		public int getIterationId() {
+			throw new UnsupportedOperationException("Not supported yet.");
+		}
 	}
 }
