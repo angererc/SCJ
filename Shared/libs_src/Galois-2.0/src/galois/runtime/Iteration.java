@@ -82,7 +82,7 @@ public class Iteration {
    *
    * @param it  the current iteration
    */
-  static void setCurrentIteration(Iteration it) {
+  public static void setCurrentIteration(Iteration it) {
     iteration.set(it);
   }
 
@@ -175,7 +175,7 @@ public class Iteration {
    * Called to abort an iteration. This unwinds the undo log, clears conflict
    * logs and releases all held partitions
    */
-  int performAbort() {
+  public int performAbort() {
     Callback c;
     while ((c = undoActions.poll()) != null) {
       c.call();
@@ -188,7 +188,7 @@ public class Iteration {
    * Commit iteration. This clears the conflict logs and releases any held
    * partitions, and performs any commit actions
    */
-  int performCommit(boolean releaseLocks) {
+  public int performCommit(boolean releaseLocks) {
     Callback c;
     while ((c = commitActions.poll()) != null) {
       c.call();
@@ -202,7 +202,7 @@ public class Iteration {
    * iteration as it can to reduce the need for garbage collection. Returns
    * the new Iteration
    */
-  Iteration recycle() {
+  public Iteration recycle() {
     reset();
     return this;
   }
