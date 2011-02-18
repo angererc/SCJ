@@ -6,7 +6,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jsr166y.ForkJoinPool;
-import jsr166y.Phaser;
 import jsr166y.RecursiveAction;
 
 public final class Task<R> extends RecursiveAction {
@@ -19,7 +18,7 @@ public final class Task<R> extends RecursiveAction {
 	
 	//we use our own thread pool that shuts down automatically once the worklist is empty
 	static ForkJoinPool Pool = null; //Executors.newCachedThreadPool();
-	static Phaser Phaser = null;
+	static AtomicInteger numTasksScheduled;
 	
 	//the task that is currently executing in this thread
 	static final ThreadLocal<Task<?>> Now = new ThreadLocal<Task<?>>();
@@ -72,8 +71,8 @@ public final class Task<R> extends RecursiveAction {
 		assert(now != null) : "no now activation found!!!";
 		now.retain_unsynchronized(this);
 		
-		if(DEBUG)
-			System.out.println("scheduled normal task " + this);
+		//if(DEBUG)
+			//System.out.println("scheduled normal task " + this);
 	}
 	
 	void scheduleAsMainTask(Object receiver, String taskName, Object... params) {
@@ -83,17 +82,13 @@ public final class Task<R> extends RecursiveAction {
 			this.retainCount.set(0);
 			if(DEBUG)
 				System.out.println("scheduled main task " + this);
-			Phaser = new Phaser();
-			Pool = new ForkJoinPool();
+			//Phaser = new Phaser();
+			numTasksScheduled = new AtomicInteger(1);
 			
-			Phaser.register();
+			Pool = new ForkJoinPool(java.lang.Runtime.getRuntime().availableProcessors(), ForkJoinPool.defaultForkJoinWorkerThreadFactory, null, true);
 			
 			Pool.invoke(this);
 						
-			Phaser.arriveAndAwaitAdvance();
-			Phaser = null;
-			
-			Pool.shutdown();
 			Pool.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
 			Pool = null;			
 			
@@ -237,6 +232,9 @@ public final class Task<R> extends RecursiveAction {
 		} else {
 			later.retainCount.incrementAndGet();
 		}
+		
+		if(DEBUG)
+			System.out.println(this + " retains " + later);
 	}
 		
 	//called from any task. we know that (when well formed) later is in the future
@@ -261,9 +259,12 @@ public final class Task<R> extends RecursiveAction {
 		if(this.retainedTasks == null)
 			return;
 		//release retained
-		for(Task<?> succ : this.retainedTasks) {
+		for(Task<?> succ : this.retainedTasks) {			
 			int count = succ.retainCount.decrementAndGet();
+			if(DEBUG)
+				System.out.println(this + " released " + succ + "; new retain count is " + count);
 			if(count == 0) {
+				numTasksScheduled.incrementAndGet();
 				succ.fork();				
 			}
 		}
@@ -271,14 +272,13 @@ public final class Task<R> extends RecursiveAction {
 	
 	@Override
 	public void compute() {
-		Phaser.register();
 		
 		assert(this.retainCount.get() == 0) : "retain count must be 0 but was " + this.retainCount;
 		
 		this.retainCount.set(EXECUTING);
 		
-		if(DEBUG)
-			System.out.println("executing " + this);
+		//if(DEBUG)
+			//System.out.println("executing " + this);
 		
 		Now.set(this);
 		
@@ -304,7 +304,11 @@ public final class Task<R> extends RecursiveAction {
 			if(!DEBUG)
 				this.retainedTasks = null;
 			
-			Phaser.arrive();
+			//Phaser.arrive();
+			int waiting = numTasksScheduled.decrementAndGet();
+			if(waiting == 0) {
+				Pool.shutdown();
+			}
 		}
 	}
 	

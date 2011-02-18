@@ -2,12 +2,11 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="Shared/src"/>
-	<classpathentry kind="src" path="Shared/benchmarks/Lonestar-2.1/common"/>
-	<classpathentry kind="src" path="Shared/benchmarks/Lonestar-2.1/BarnesHut/src/java"/>
-	<classpathentry kind="src" path="Shared/benchmarks/Lonestar-2.1/DelaunayTriangulation/src/java"/>
-	<classpathentry kind="src" path="Shared/benchmarks/Lonestar-2.1/util"/>
+	<classpathentry kind="src" path="Shared/libs_src/Galois-2.0/src"/>
+	<classpathentry kind="src" path="Shared/benchmarks/Galois-Lonestar-2.1"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="Shared/libs/javassist.jar"/>
 	<classpathentry kind="lib" path="Shared/libs/jsr166y.jar"/>
+	<classpathentry kind="lib" path="Shared/libs/trove-3.0.0a1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

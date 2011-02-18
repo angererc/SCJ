@@ -1,0 +1,5 @@
+epsilon=0.001
+nsu=25
+delta=0.005
+tau=10000
+tmax=100
