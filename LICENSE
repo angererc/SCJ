@@ -1,4 +1,20 @@
-		   GNU LESSER GENERAL PUBLIC LICENSE
+This project includes third-party libraries (see below). Those libraries are licensed under their respective licenses. The code for the Sequentially Consistent Java is licensed under LGPL Version 3 which is attached below.
+
+---
+
+SCJ uses code of the following third parties:
+* JSR166y
+* Javassist
+* Wala
+* Galois
+* Trove
+* Lonestar benchmark Suite
+* ERCO benchmark suite
+* some of the Java Grande Benchmark suite
+
+---
+		
+		GNU LESSER GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
 
  Copyright (C) 2007 Free Software Foundation, Inc. <http://fsf.org/>
