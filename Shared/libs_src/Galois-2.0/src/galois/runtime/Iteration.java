@@ -98,7 +98,7 @@ public class Iteration {
    */
   public static Iteration acquire(Lockable lockable, byte flags) {
     Iteration it = null;
-    if (GaloisRuntime.needMethodFlag(flags, MethodFlag.CHECK_CONFLICT)) {
+    if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.CHECK_CONFLICT)) {
       it = Iteration.getCurrentIteration();
       it.acquire(lockable);
     }
@@ -124,11 +124,11 @@ public class Iteration {
     locked.add(lockable);
   }
 
-  void addCommitAction(Callback c) {
+  public void addCommitAction(Callback c) {
     commitActions.addLast(c);
   }
 
-  void addUndoAction(Callback c) {
+  public void addUndoAction(Callback c) {
     undoActions.addFirst(c);
   }
 

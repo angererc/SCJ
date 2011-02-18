@@ -148,7 +148,7 @@ final class SerialLocalComputationObjectGraph<N extends GObject, E> implements O
   }
 
   private void acquireAll(byte flags) {
-    if (GaloisRuntime.needMethodFlag(flags, MethodFlag.CHECK_CONFLICT)) {
+    if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.CHECK_CONFLICT)) {
       throw new UnsupportedOperationException();
     }
   }
@@ -311,7 +311,7 @@ final class SerialLocalComputationObjectGraph<N extends GObject, E> implements O
 
     if (oldData != data) {
       edgeData[idx] = data;
-      if (GaloisRuntime.needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
+      if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
         GaloisRuntime.getRuntime().onUndo(Iteration.getCurrentIteration(), new Callback() {
           @Override
           public void call() {
@@ -441,7 +441,7 @@ final class SerialLocalComputationObjectGraph<N extends GObject, E> implements O
       if (oldData != data) {
         this.data = data;
 
-        if (GaloisRuntime.needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
+        if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
           GaloisRuntime.getRuntime().onUndo(Iteration.getCurrentIteration(), new Callback() {
             @Override
             public void call() {

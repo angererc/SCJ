@@ -92,7 +92,7 @@ public class AccumulatorBuilder {
 
     @Override
     public void add(final int delta, byte flags) {
-      if (GaloisRuntime.needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
+      if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
         Iteration it = Iteration.getCurrentIteration();
         if (it != null)
           GaloisRuntime.getRuntime().onUndo(it, new Callback() {

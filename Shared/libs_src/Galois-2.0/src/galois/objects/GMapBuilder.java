@@ -233,7 +233,7 @@ public class GMapBuilder<K extends Lockable, V extends GObject> {
 
     @Override
     public int size(byte flags) {
-      if (GaloisRuntime.needMethodFlag(flags, MethodFlag.CHECK_CONFLICT)) {
+      if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.CHECK_CONFLICT)) {
         throw new Error("no globals");
       }
       return map.size();
@@ -246,7 +246,7 @@ public class GMapBuilder<K extends Lockable, V extends GObject> {
 
     @Override
     public boolean isEmpty(byte flags) {
-      if (GaloisRuntime.needMethodFlag(flags, MethodFlag.CHECK_CONFLICT)) {
+      if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.CHECK_CONFLICT)) {
         throw new Error("no globals");
       }
       return map.isEmpty();
@@ -271,7 +271,7 @@ public class GMapBuilder<K extends Lockable, V extends GObject> {
 
     @Override
     public boolean containsValue(Object arg0, byte flags) {
-      if (GaloisRuntime.needMethodFlag(flags, MethodFlag.CHECK_CONFLICT)) {
+      if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.CHECK_CONFLICT)) {
         throw new Error("no globals");
       }
       return map.containsValue(arg0);
@@ -313,7 +313,7 @@ public class GMapBuilder<K extends Lockable, V extends GObject> {
       Iteration it = Iteration.acquire(arg0, keyFlags);
       final V retval = map.put(arg0, arg1);
       final boolean hadEntry = retval != null;
-      if (GaloisRuntime.needMethodFlag(keyFlags, MethodFlag.SAVE_UNDO)) {
+      if (GaloisRuntime.getRuntime().needMethodFlag(keyFlags, MethodFlag.SAVE_UNDO)) {
         if (it == null) {
           it = Iteration.getCurrentIteration();
         }
@@ -351,7 +351,7 @@ public class GMapBuilder<K extends Lockable, V extends GObject> {
       Iteration it = Iteration.acquire((K) arg0, keyFlags);
       final V retval = map.remove(arg0);
       final boolean hadEntry = retval != null;
-      if (hadEntry && GaloisRuntime.needMethodFlag(keyFlags, MethodFlag.SAVE_UNDO)) {
+      if (hadEntry && GaloisRuntime.getRuntime().needMethodFlag(keyFlags, MethodFlag.SAVE_UNDO)) {
         if (it == null) {
           it = Iteration.getCurrentIteration();
         }
@@ -388,7 +388,7 @@ public class GMapBuilder<K extends Lockable, V extends GObject> {
 
     @Override
     public void clear(byte flags) {
-      if (GaloisRuntime.needMethodFlag(flags, (byte) (MethodFlag.CHECK_CONFLICT | MethodFlag.SAVE_UNDO))) {
+      if (GaloisRuntime.getRuntime().needMethodFlag(flags, (byte) (MethodFlag.CHECK_CONFLICT | MethodFlag.SAVE_UNDO))) {
         throw new Error("no globals");
       }
       map.clear();
@@ -401,7 +401,7 @@ public class GMapBuilder<K extends Lockable, V extends GObject> {
 
     @Override
     public Set<K> keySet(byte flags) {
-      if (GaloisRuntime.needMethodFlag(flags, MethodFlag.CHECK_CONFLICT)) {
+      if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.CHECK_CONFLICT)) {
         throw new Error("no globals");
       }
       return Collections.unmodifiableSet(map.keySet());
@@ -414,7 +414,7 @@ public class GMapBuilder<K extends Lockable, V extends GObject> {
 
     @Override
     public Collection<V> values(byte flags) {
-      if (GaloisRuntime.needMethodFlag(flags, MethodFlag.CHECK_CONFLICT)) {
+      if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.CHECK_CONFLICT)) {
         throw new Error("no globals");
       }
       return Collections.unmodifiableCollection(map.values());
@@ -427,7 +427,7 @@ public class GMapBuilder<K extends Lockable, V extends GObject> {
 
     @Override
     public Set<Map.Entry<K, V>> entrySet(byte flags) {
-      if (GaloisRuntime.needMethodFlag(flags, MethodFlag.CHECK_CONFLICT)) {
+      if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.CHECK_CONFLICT)) {
         throw new Error("no globals");
       }
       return Collections.unmodifiableSet(map.entrySet());
@@ -440,7 +440,7 @@ public class GMapBuilder<K extends Lockable, V extends GObject> {
 
     @Override
     public boolean equals(Object arg0, byte flags) {
-      if (GaloisRuntime.needMethodFlag(flags, MethodFlag.CHECK_CONFLICT)) {
+      if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.CHECK_CONFLICT)) {
         throw new Error("no globals");
       }
       return map.equals(arg0);
@@ -453,7 +453,7 @@ public class GMapBuilder<K extends Lockable, V extends GObject> {
 
     @Override
     public int hashCode(byte flags) {
-      if (GaloisRuntime.needMethodFlag(flags, MethodFlag.CHECK_CONFLICT)) {
+      if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.CHECK_CONFLICT)) {
         throw new Error("no globals");
       }
       return map.hashCode();

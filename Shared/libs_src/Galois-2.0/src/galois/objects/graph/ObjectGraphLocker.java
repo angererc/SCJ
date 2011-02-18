@@ -37,7 +37,7 @@ final class ObjectGraphLocker extends GraphLocker {
 
   static <N extends GObject, E> void removeNeighborEpilog(final ObjectGraph<N, E> graph, final GNode<N> src,
       final GNode<N> dst, final E edgeData, byte flags) {
-    if (GaloisRuntime.needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
+    if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
       GaloisRuntime.getRuntime().onUndo(Iteration.getCurrentIteration(), new Callback() {
         @Override
         public void call() {
@@ -50,13 +50,13 @@ final class ObjectGraphLocker extends GraphLocker {
   //no epilog
   static <N extends GObject, E> void removeNodeProlog(final ObjectGraph<N, E> graph, final GNode<N> src, byte flags) {
     //we already have a lock on src
-    if (GaloisRuntime.needMethodFlag(flags, MethodFlag.CHECK_CONFLICT)) {
+    if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.CHECK_CONFLICT)) {
       graph.mapInNeighbors(src, lock, MethodFlag.NONE);
       if (graph.isDirected()) {
         src.map(lock2, Iteration.getCurrentIteration(), MethodFlag.NONE);
       }
     }
-    if (!GaloisRuntime.needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
+    if (!GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
       return;
     }
     Lambda3Void<GNode<N>, GNode<N>, Map<GNode<N>, E>> getOutNeighbors = new Lambda3Void<GNode<N>, GNode<N>, Map<GNode<N>, E>>() {
@@ -95,7 +95,7 @@ final class ObjectGraphLocker extends GraphLocker {
   }
 
   static <N extends GObject> void addEdgeEpilog(final Graph<N> graph, final GNode<N> src, final GNode<N> dst, byte flags) {
-    if (GaloisRuntime.needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
+    if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
       GaloisRuntime.getRuntime().onUndo(Iteration.getCurrentIteration(), new Callback() {
         @Override
         public void call() {
@@ -111,7 +111,7 @@ final class ObjectGraphLocker extends GraphLocker {
 
   static <E> void getEdgeDataEpilog(final E data, byte flags) {
     // Lift check up to here because it's slightly faster
-    if (GaloisRuntime.needMethodFlag(flags, (byte) (MethodFlag.SAVE_UNDO | MethodFlag.CHECK_CONFLICT))) {
+    if (GaloisRuntime.getRuntime().needMethodFlag(flags, (byte) (MethodFlag.SAVE_UNDO | MethodFlag.CHECK_CONFLICT))) {
       ((GObject) data).access(flags);
     }
   }
@@ -122,7 +122,7 @@ final class ObjectGraphLocker extends GraphLocker {
 
   static <N extends GObject, E> void setEdgeDataEpilog(final ObjectGraph<N, E> graph, final GNode<N> src,
       final GNode<N> dst, final E data, byte flags) {
-    if (GaloisRuntime.needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
+    if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
       GaloisRuntime.getRuntime().onUndo(Iteration.getCurrentIteration(), new Callback() {
         @Override
         public void call() {

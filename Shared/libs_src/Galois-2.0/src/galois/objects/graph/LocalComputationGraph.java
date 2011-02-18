@@ -449,7 +449,7 @@ public final class LocalComputationGraph<N extends GObject, E> implements Object
   }
 
   private static void acquireAll(byte flags) {
-    if (GaloisRuntime.needMethodFlag(flags, MethodFlag.CHECK_CONFLICT)) {
+    if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.CHECK_CONFLICT)) {
       throw new UnsupportedOperationException();
     }
   }
@@ -674,7 +674,7 @@ public final class LocalComputationGraph<N extends GObject, E> implements Object
     E retval = edgeData[getEdgeIdx(src, dst)];
 
     // Lift check up to here because it's slightly faster
-    if (GaloisRuntime.needMethodFlag(dataFlags, (byte) (MethodFlag.SAVE_UNDO | MethodFlag.CHECK_CONFLICT))) {
+    if (GaloisRuntime.getRuntime().needMethodFlag(dataFlags, (byte) (MethodFlag.SAVE_UNDO | MethodFlag.CHECK_CONFLICT))) {
       ((GObject) retval).access(dataFlags);
     }
     return retval;
@@ -695,7 +695,7 @@ public final class LocalComputationGraph<N extends GObject, E> implements Object
 
     if (oldData != data) {
       edgeData[idx] = data;
-      if (GaloisRuntime.needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
+      if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
         GaloisRuntime.getRuntime().onUndo(Iteration.getCurrentIteration(), new Callback() {
           @Override
           public void call() {
@@ -855,7 +855,7 @@ public final class LocalComputationGraph<N extends GObject, E> implements Object
     public N getData(byte nodeFlags, byte dataFlags) {
       acquire(this, nodeFlags);
       // Lift check up to here because it's slightly faster
-      if (GaloisRuntime.needMethodFlag(dataFlags, (byte) (MethodFlag.SAVE_UNDO | MethodFlag.CHECK_CONFLICT))) {
+      if (GaloisRuntime.getRuntime().needMethodFlag(dataFlags, (byte) (MethodFlag.SAVE_UNDO | MethodFlag.CHECK_CONFLICT))) {
         data.access(dataFlags);
       }
       return data;
@@ -875,7 +875,7 @@ public final class LocalComputationGraph<N extends GObject, E> implements Object
       if (oldData != data) {
         this.data = data;
 
-        if (GaloisRuntime.needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
+        if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
           GaloisRuntime.getRuntime().onUndo(Iteration.getCurrentIteration(), new Callback() {
             @Override
             public void call() {

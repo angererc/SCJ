@@ -40,7 +40,7 @@ import util.Statistics;
 import util.fn.Lambda2Void;
 
 abstract class AbstractConcurrentExecutor<T> implements Executor {
-  private static final boolean cpuFunctionsLoaded = GaloisRuntime.getRuntime().moreStats() && CPUFunctions.isLoaded();
+  private static final boolean cpuFunctionsLoaded = FullGaloisRuntime.getFullRuntime().moreStats() && CPUFunctions.isLoaded();
 
   protected Worklist<T> worklist;
   protected Lambda2Void<T, ForeachContext<T>> body;
@@ -151,11 +151,11 @@ abstract class AbstractConcurrentExecutor<T> implements Executor {
         reset();
 
         startTiming();
-        GaloisRuntime.getRuntime().callAll(processes);
+        FullGaloisRuntime.getFullRuntime().callAll(processes);
         stopTiming();
 
         if (!suspendThunks.isEmpty()) {
-          GaloisRuntime.getRuntime().replaceWithRootContextAndCall(new Callback() {
+          FullGaloisRuntime.getFullRuntime().replaceWithRootContextAndCall(new Callback() {
             public void call() {
               for (Callback thunk : suspendThunks) {
                 thunk.call();

@@ -215,7 +215,7 @@ public class GMutableIntegerBuilder {
     private void prolog(byte flags) {
       Iteration it = Iteration.acquire(this, flags);
 
-      if (GaloisRuntime.needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
+      if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
         if (it == null) {
           it = Iteration.getCurrentIteration();
         }

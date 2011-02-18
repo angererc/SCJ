@@ -49,7 +49,7 @@ public abstract class AbstractBaseObject extends AbstractLockable implements GOb
   @Override
   public void access(byte flags) {
     Iteration it = Iteration.acquire(this, flags);
-    if (GaloisRuntime.needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
+    if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
       if (it == null) {
         it = Iteration.getCurrentIteration();
       }

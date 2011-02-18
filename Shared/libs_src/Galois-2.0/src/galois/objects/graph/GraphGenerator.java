@@ -25,6 +25,7 @@ import galois.objects.GObject;
 import galois.objects.Mappable;
 import galois.objects.Mappables;
 import galois.runtime.ForeachContext;
+import galois.runtime.FullGaloisRuntime;
 import galois.runtime.GaloisRuntime;
 
 import java.io.BufferedReader;
@@ -254,7 +255,7 @@ public class GraphGenerator {
         });
 
     try {
-      GaloisRuntime.foreach(product, new LambdaVoid<Pair<Integer, String>>() {
+      FullGaloisRuntime.foreach(product, new LambdaVoid<Pair<Integer, String>>() {
         @Override
         public void call(Pair<Integer, String> pair) {
           String line = pair.getSecond();

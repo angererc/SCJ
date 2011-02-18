@@ -63,7 +63,7 @@ class IndexedTreeLocker extends GraphLocker {
     if (child != null) {
       acquireLock(child, flags);
     }
-    if (GaloisRuntime.needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
+    if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
       GaloisRuntime.getRuntime().onUndo(Iteration.getCurrentIteration(), new Callback() {
         @Override
         public void call() {

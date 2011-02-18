@@ -109,7 +109,7 @@ abstract class AbstractCounter<T> implements Counter<T>, Replayable {
 
   @Override
   public final void increment(final ForeachContext<T> ctx, final int delta, byte flags) {
-    if (GaloisRuntime.needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
+    if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
       GaloisRuntime.getRuntime().onCommit(Iteration.getCurrentIteration(), new Callback() {
         @Override
         public void call() {

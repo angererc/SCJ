@@ -337,10 +337,10 @@ class PlaybackReplayFeature<T> extends ReplayFeature implements Executor, Foreac
     final Object obj = callbacks.get(rid);
     switch (callbackTypes.get(rid)) {
     case CALLBACK:
-      GaloisRuntime.getRuntime().replaceWithRootContextAndCall((Callback) obj);
+      FullGaloisRuntime.getFullRuntime().replaceWithRootContextAndCall((Callback) obj);
       break;
     case LAMBDA_CONTEXT:
-      GaloisRuntime.getRuntime().replaceWithRootContextAndCall(new Callback() {
+      FullGaloisRuntime.getFullRuntime().replaceWithRootContextAndCall(new Callback() {
         @Override
         public void call() {
           ((LambdaVoid<ForeachContext<?>>) obj).call(ctx);

@@ -50,7 +50,7 @@ class GraphLocker {
   }
 
   static <N extends GObject> void addNodeEpilog(final Graph<N> graph, final GNode<N> src, byte flags) {
-    if (GaloisRuntime.needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
+    if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
       GaloisRuntime.getRuntime().onUndo(Iteration.getCurrentIteration(), new Callback() {
         @Override
         public void call() {
@@ -81,7 +81,7 @@ class GraphLocker {
 
   static <N extends GObject> void getNodeDataEpilog(N data, byte flags) {
     // Lift check up to here because it's slightly faster
-    if (GaloisRuntime.needMethodFlag(flags, (byte) (MethodFlag.SAVE_UNDO | MethodFlag.CHECK_CONFLICT))) {
+    if (GaloisRuntime.getRuntime().needMethodFlag(flags, (byte) (MethodFlag.SAVE_UNDO | MethodFlag.CHECK_CONFLICT))) {
       data.access(flags);
     }
   }
@@ -91,7 +91,7 @@ class GraphLocker {
   }
 
   static <N extends GObject> void setNodeDataEpilog(final GNode<N> src, final N data, byte flags) {
-    if (GaloisRuntime.needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
+    if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
       GaloisRuntime.getRuntime().onUndo(Iteration.getCurrentIteration(), new Callback() {
         @Override
         public void call() {
@@ -113,7 +113,7 @@ class GraphLocker {
   }
 
   static void acquireLockOnAll(byte flags) {
-    if (GaloisRuntime.needMethodFlag(flags, MethodFlag.CHECK_CONFLICT)) {
+    if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.CHECK_CONFLICT)) {
       throw new Error("no globals");
     }
   }
@@ -122,13 +122,13 @@ class GraphLocker {
   @SuppressWarnings("unchecked")
   static <N extends GObject> void removeNodeProlog(final Graph<N> graph, final GNode<N> src, byte flags) {
     //we already have a lock on src
-    if (GaloisRuntime.needMethodFlag(flags, MethodFlag.CHECK_CONFLICT)) {
+    if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.CHECK_CONFLICT)) {
       graph.mapInNeighbors(src, lock, MethodFlag.NONE);
       if (graph.isDirected()) {
         src.map(lock2, Iteration.getCurrentIteration(), MethodFlag.NONE);
       }
     }
-    if (!GaloisRuntime.needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
+    if (!GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
       return;
     }
     final Collection<GNode<N>> neighbors = new ArrayList<GNode<N>>();
@@ -155,7 +155,7 @@ class GraphLocker {
 
   static <N extends GObject> void removeNeighborEpilog(final Graph<N> graph, final GNode<N> src, final GNode<N> dst,
       byte flags) {
-    if (GaloisRuntime.needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
+    if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
       GaloisRuntime.getRuntime().onUndo(Iteration.getCurrentIteration(), new Callback() {
         @Override
         public void call() {
@@ -167,7 +167,7 @@ class GraphLocker {
 
   static <N extends GObject> void addNeighborEpilog(final Graph<N> graph, final GNode<N> src, final GNode<N> dst,
       byte flags) {
-    if (GaloisRuntime.needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
+    if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
       GaloisRuntime.getRuntime().onUndo(Iteration.getCurrentIteration(), new Callback() {
         @Override
         public void call() {

@@ -35,7 +35,7 @@ abstract class AbstractGaloisExecutor<T> extends AbstractConcurrentExecutor<T> {
   protected int maxIterations;
 
   protected AbstractGaloisExecutor() {
-    this.maxIterations = GaloisRuntime.getRuntime().getMaxIterations();
+    this.maxIterations = FullGaloisRuntime.getFullRuntime().getMaxIterations();
     System.out.println("created AbstractGaloisExecutor " + this.getClass().getName());
   }
 
@@ -244,7 +244,7 @@ abstract class AbstractGaloisExecutor<T> extends AbstractConcurrentExecutor<T> {
     @Override
     public void add(final T t, byte flags) {
       final ForeachContext<T> ctx = this;
-      if (GaloisRuntime.needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
+      if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
         currentIteration.addCommitAction(new Callback() {
           @Override
           public void call() {

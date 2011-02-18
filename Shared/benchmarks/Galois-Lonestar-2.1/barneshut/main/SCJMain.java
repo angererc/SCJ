@@ -26,6 +26,7 @@ import galois.objects.graph.ArrayIndexedTree;
 import galois.objects.graph.GNode;
 import galois.objects.graph.IndexedGraph;
 import galois.runtime.ForeachContext;
+import galois.runtime.FullGaloisRuntime;
 import galois.runtime.GaloisRuntime;
 import galois.runtime.ReplayFeature;
 import galois.runtime.wl.ChunkedFIFO;
@@ -436,7 +437,7 @@ public final class SCJMain {
 	static OctTreeNodeData res;
 	
 	public static void main(String args[]) throws Exception {
-
+		FullGaloisRuntime.initialize(2, false, false, ReplayFeature.Type.NO, false, false);
 		if (Launcher.getLauncher().isFirstRun()) {
 			System.err.println("Lonestar Benchmark Suite v3.0");
 			System.err.println("Copyright (C) 2007, 2008, 2009, 2010 The University of Texas at Austin");

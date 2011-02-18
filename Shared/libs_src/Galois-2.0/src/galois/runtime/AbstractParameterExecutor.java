@@ -224,7 +224,7 @@ abstract class AbstractParameterExecutor<T, S> implements Executor, ForeachConte
 
       // some iteration(s) in the current step added a suspend action
       if (yield) {
-        GaloisRuntime.getRuntime().replaceWithRootContextAndCall(new Callback() {
+        FullGaloisRuntime.getFullRuntime().replaceWithRootContextAndCall(new Callback() {
 
           @Override
           public void call() {

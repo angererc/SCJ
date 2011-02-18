@@ -263,7 +263,7 @@ public class BagBuilder<T> {
         node = new Node<T>(o, cur);
       } while (!head.compareAndSet(cur, node));
 
-      if (GaloisRuntime.needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
+      if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
         final Node<T> n = node;
         runtime.onUndo(Iteration.getCurrentIteration(), new Callback() {
           @Override
@@ -369,7 +369,7 @@ public class BagBuilder<T> {
      * @see #iterator()
      */
     public Iterator<T> iterator(byte flags) {
-      if (GaloisRuntime.needMethodFlag(flags, MethodFlag.CHECK_CONFLICT)) {
+      if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.CHECK_CONFLICT)) {
         throw new Error("No global actions during parallel execution");
       }
 

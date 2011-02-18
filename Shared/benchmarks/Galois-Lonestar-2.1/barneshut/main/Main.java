@@ -26,6 +26,7 @@ import galois.objects.graph.ArrayIndexedTree;
 import galois.objects.graph.GNode;
 import galois.objects.graph.IndexedGraph;
 import galois.runtime.ForeachContext;
+import galois.runtime.FullGaloisRuntime;
 import galois.runtime.GaloisRuntime;
 import galois.runtime.ReplayFeature;
 import galois.runtime.wl.ChunkedFIFO;
@@ -363,7 +364,7 @@ public final class Main {
 	 */
 	public static void main(String args[]) throws ExecutionException {
 
-		GaloisRuntime.initialize(2, false, false, ReplayFeature.Type.NO, false, false);
+		FullGaloisRuntime.initialize(2, false, false, ReplayFeature.Type.NO, false, false);
 
 		if (Launcher.getLauncher().isFirstRun()) {
 			System.err.println("Lonestar Benchmark Suite v3.0");
@@ -408,7 +409,7 @@ public final class Main {
 			curr = 0;
 			ComputeCenterOfMass(octree, root); // summarize subtree info in each internal node (plus restructure tree and sort bodies for performance reasons)
 
-			GaloisRuntime.foreach(Arrays.asList(leaf),
+			FullGaloisRuntime.foreach(Arrays.asList(leaf),
 					new Lambda2Void<GNode<OctTreeNodeData>, ForeachContext<GNode<OctTreeNodeData>>>() {
 				@Override
 				public void call(GNode<OctTreeNodeData> item, ForeachContext<GNode<OctTreeNodeData>> ctx) {

@@ -50,7 +50,7 @@ public abstract class AbstractNoConflictBaseObject implements GObject {
   @Override
   public void access(byte flags) {
     Iteration it = null;
-    if (GaloisRuntime.needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
+    if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
       if (it == null) {
         it = Iteration.getCurrentIteration();
       }
