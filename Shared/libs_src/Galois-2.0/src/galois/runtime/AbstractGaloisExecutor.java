@@ -183,7 +183,7 @@ abstract class AbstractGaloisExecutor<T> extends AbstractConcurrentExecutor<T> {
 
 		@Override
 		protected void doCall() throws Exception {
-			System.out.println("GaloisComputation.doCall() called on " + id);
+			//System.out.println("GaloisComputation.doCall() called on " + id);
 			first = true;
 			try {
 				L1: while (true) {
@@ -199,7 +199,7 @@ abstract class AbstractGaloisExecutor<T> extends AbstractConcurrentExecutor<T> {
 								break;
 							}
 						}
-						System.out.println("GaloisProcess " + id + "; doCall() iteration " + iterationId);
+						//System.out.println("GaloisProcess " + id + "; doCall() iteration " + iterationId);
 						try {
 							body.call(item, this);
 							doCommit(item);
