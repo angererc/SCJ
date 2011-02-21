@@ -19,7 +19,7 @@ File: PrimsComparator.java
 
 */
 
-package boruvka.main;
+package boruvka.uf;
 
 import galois.objects.graph.GNode;
 

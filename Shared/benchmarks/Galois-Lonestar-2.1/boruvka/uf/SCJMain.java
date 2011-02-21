@@ -35,7 +35,6 @@ import util.fn.Lambda;
 import util.fn.Lambda2;
 import util.fn.Lambda2Void;
 import util.fn.LambdaVoid;
-import boruvka.main.PrimsComparator;
 
 public class SCJMain {
 	protected static final int INFINITY = Integer.MAX_VALUE;
