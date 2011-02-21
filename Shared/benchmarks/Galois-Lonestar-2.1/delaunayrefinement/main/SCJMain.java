@@ -7,7 +7,6 @@ import galois.objects.graph.ObjectGraph;
 import galois.objects.graph.ObjectUndirectedEdge;
 import galois.runtime.Features;
 import galois.runtime.ForeachContext;
-import galois.runtime.FullGaloisRuntime;
 import galois.runtime.GaloisRuntime;
 import galois.runtime.ReplayFeature;
 import galois.runtime.WorkNotUsefulException;
@@ -21,11 +20,9 @@ import galois_scj.UnorderedGaloisSCJComputation;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import scj.Task;
 import util.Launcher;
-import util.fn.Lambda2Void;
 
 public class SCJMain {
 
