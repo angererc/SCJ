@@ -26,14 +26,13 @@ import galois.objects.graph.ArrayIndexedTree;
 import galois.objects.graph.GNode;
 import galois.objects.graph.IndexedGraph;
 import galois.runtime.ForeachContext;
-import galois.runtime.GaloisRuntime;
 import galois.runtime.wl.ChunkedFIFO;
 import galois.runtime.wl.FIFO;
 import galois.runtime.wl.Priority;
-import galois.runtime.wl.Worklist;
 import galois_scj.GaloisSCJComputation;
 import galois_scj.GaloisSCJProcess;
 import galois_scj.ReducedGaloisRuntime;
+import galois_scj.UnorderedGaloisSCJComputation;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -369,7 +368,7 @@ public final class SCJMain {
 		} // end of time step
 	}
 	
-	public void scjTask_ComputeTimeStep(Task<Void> now, Integer step, Task<Void> later) throws Exception {
+	public void scjTask_ComputeTimeStep(Task<Void> now, final Integer step, Task<Void> later) throws Exception {
 		//one iteration
 		
 		ComputeCenterAndDiameter();
@@ -390,12 +389,20 @@ public final class SCJMain {
 		Task<Void> join = new Task<Void>();
 		UtilityTasks.get().scjTask_join(join);
 		
-		Worklist<GNode<OctTreeNodeData>> worklist = Priority.makeUnordered(Priority.first(ChunkedFIFO.class).then(FIFO.class));		
-		GaloisSCJComputation<GNode<OctTreeNodeData>> computation = new GaloisSCJComputation<GNode<OctTreeNodeData>>(worklist, GaloisRuntime.getRuntime().getMaxThreads());
-		computation.initializeWorklist(Arrays.asList(leaf));
-		for(int i = 0; i < computation.getNumTasks(); i++) {			
+		GaloisSCJComputation<GNode<OctTreeNodeData>> computation = new UnorderedGaloisSCJComputation<GNode<OctTreeNodeData>>(Arrays.asList(leaf), Priority.first(ChunkedFIFO.class).then(FIFO.class));		
+		for(int i = 0; i < computation.getNumTasks(); i++) {
+			GaloisSCJProcess<GNode<OctTreeNodeData>> process = new GaloisSCJProcess<GNode<OctTreeNodeData>>(computation, i) {
+
+				@Override
+				protected void body(GNode<OctTreeNodeData> item,
+						ForeachContext<GNode<OctTreeNodeData>> context) {
+					ComputeForce(item, octree, root, diameter, itolsq, step, dthf, epssq);
+				}
+				
+			};
+			
 			Task<Void> computeForceTask = new Task<Void>();
-			this.scjTask_ComputeForce(computeForceTask, computation, i, octree, root, step);
+			process.scjTask_process(computeForceTask);
 			
 			computeForceTask.hb(join);
 		}
@@ -407,22 +414,7 @@ public final class SCJMain {
 		advance.hb(later);
 
 	}
-	
-	public void scjTask_ComputeForce(Task<Void> now, GaloisSCJComputation<GNode<OctTreeNodeData>> computation, Integer taskID, 
-			final IndexedGraph<OctTreeNodeData> octree, final GNode<OctTreeNodeData> root, final Integer step) throws Exception {
 		
-		GaloisSCJProcess<GNode<OctTreeNodeData>> process = new GaloisSCJProcess<GNode<OctTreeNodeData>>(computation, taskID) {
-
-			@Override
-			protected void body(GNode<OctTreeNodeData> item,
-					ForeachContext<GNode<OctTreeNodeData>> context) {
-				ComputeForce(item, octree, root, diameter, itolsq, step, dthf, epssq);
-			}
-			
-		};
-		process.doCall();
-	}
-	
 	public void scjTask_Advance(Task<Void> now, IndexedGraph<OctTreeNodeData> octree, GNode<OctTreeNodeData> root, Integer step) {
 		Advance(octree, dthf, dtime); // advance the position and velocity of each
 		// body

@@ -294,6 +294,7 @@ public final class Task<R> extends RecursiveAction {
 			Pool.shutdown();
 			//we kill the program if there is ever an unhandled exception
 			//so we know that either all works according to the schedule or we die
+			e.printStackTrace();
 			throw new Error(e);
 		} finally {
 			//we're out'a here

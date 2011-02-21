@@ -11,6 +11,8 @@ import galois.runtime.WorkNotUsefulException;
 
 import java.util.concurrent.ExecutionException;
 
+import scj.Task;
+
 public abstract class GaloisSCJProcess<T> implements ForeachContext<T> {
 
 	private final GaloisSCJComputation<T> computation;
@@ -181,7 +183,7 @@ public abstract class GaloisSCJProcess<T> implements ForeachContext<T> {
 
 	protected abstract void body(T item, ForeachContext<T> context);
 
-	public void doCall() throws Exception {
+	public void scjTask_process(Task<Void> now) throws Exception {
 		first = true;
 		try {
 			L1: while (true) {

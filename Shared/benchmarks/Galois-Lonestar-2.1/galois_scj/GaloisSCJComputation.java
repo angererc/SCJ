@@ -21,7 +21,7 @@ import galois.runtime.wl.Worklist;
 //collects a worklist and other information that is common accross forked worker tasks
 //each worker task will have an ID that it uses to find the correct piece of work
 //then a worker can start a GaloisSCJProcess with that id that does the actual work
-public class GaloisSCJComputation<T> {
+public abstract class GaloisSCJComputation<T> {
 
 	final Worklist<T> worklist;
 	final int numTasks;
@@ -38,15 +38,25 @@ public class GaloisSCJComputation<T> {
 	//not sure what this really does
 	final int lockCoalescing = 0;
 
-	public GaloisSCJComputation(Worklist<T> worklist, int numTasks) {
+	protected GaloisSCJComputation(Worklist<T> worklist, int numTasks) throws ExecutionException {
 		this.worklist = worklist;
 		this.numTasks = numTasks;
 		lock = new ReentrantLock();
 		moreWork = lock.newCondition();
-		suspendThunks = new ArrayDeque<Callback>();
+		suspendThunks = new ArrayDeque<Callback>();		
 	}
 	
-	public void initializeWorklist(Iterable<T> initial)
+	protected GaloisSCJComputation(Worklist<T> worklist, Iterable<T> initial, int numTasks) throws ExecutionException {
+		this(worklist, numTasks);
+		this.initializeWorklist(initial);
+	}
+	
+	protected GaloisSCJComputation(Worklist<T> worklist, Mappable<T> initial, int numTasks) throws ExecutionException {
+		this(worklist, numTasks);
+		this.initializeWorklist(initial);
+	}
+	
+	private void initializeWorklist(Iterable<T> initial)
 	throws ExecutionException {
 		final ForeachContext<T> ctx = new SimpleContext<T>(numTasks);
 
@@ -56,7 +66,7 @@ public class GaloisSCJComputation<T> {
 		worklist.finishAddInitial();
 	}
 	
-	public void initializeWorklist(Mappable<T> mappable)
+	private void initializeWorklist(Mappable<T> mappable)
 	throws ExecutionException {
 		final ForeachContext<T> ctx = new SimpleContext<T>(numTasks);
 
