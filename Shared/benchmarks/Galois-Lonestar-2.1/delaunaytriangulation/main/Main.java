@@ -56,6 +56,7 @@ public class Main extends AbstractMain {
     FullGaloisRuntime.foreach(initWL, new Lambda2Void<GNode<Element>, ForeachContext<GNode<Element>>>() {
       @Override
       public void call(GNode<Element> currNode, ForeachContext<GNode<Element>> ctx) {
+    	  System.out.println("Main: called triangulate computation");
         final Element data = currNode.getData(MethodFlag.CHECK_CONFLICT);
         if (data.processed) {
           return;

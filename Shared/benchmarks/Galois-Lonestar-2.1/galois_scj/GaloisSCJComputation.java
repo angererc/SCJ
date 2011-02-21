@@ -31,7 +31,7 @@ public abstract class GaloisSCJComputation<T> {
 	volatile boolean yield = false;
 	volatile boolean finish = false;
 
-	final AtomicInteger numDone = new AtomicInteger();
+	final AtomicInteger numDone;
 	
 	private final Deque<Callback> suspendThunks;
 	
@@ -43,7 +43,8 @@ public abstract class GaloisSCJComputation<T> {
 		this.numTasks = numTasks;
 		lock = new ReentrantLock();
 		moreWork = lock.newCondition();
-		suspendThunks = new ArrayDeque<Callback>();		
+		suspendThunks = new ArrayDeque<Callback>();
+		numDone = new AtomicInteger(0);
 	}
 	
 	protected GaloisSCJComputation(Worklist<T> worklist, Iterable<T> initial, int numTasks) throws ExecutionException {
@@ -129,6 +130,7 @@ public abstract class GaloisSCJComputation<T> {
 	}
 
 	void makeAllDone() {
+		//System.out.println("GaloisSCJComputation.makeAllDone() called");
 		// Can't use set() because there is a rare possibility
 		// that it would happen between an increment decrement
 		// pair in isDone and prevent some threads from leaving

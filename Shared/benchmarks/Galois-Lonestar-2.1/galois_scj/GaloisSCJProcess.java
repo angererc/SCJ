@@ -23,7 +23,7 @@ public abstract class GaloisSCJProcess<T> implements ForeachContext<T> {
 	private int lastAbort;
 	private int consecAborts;
 	private final int id;
-	
+
 	protected int numCommitted;
 	protected int numAborted;
 
@@ -47,8 +47,12 @@ public abstract class GaloisSCJProcess<T> implements ForeachContext<T> {
 	private final boolean isDone() throws InterruptedException {
 		computation.lock.lock();
 		try {
+			//System.out.println("GaloisSCJProcess.isDone() called " + id);
 			// Encountered an error by another thread?
 			if (computation.numDone.incrementAndGet() > computation.numTasks) {
+				System.out.println("\tGaloisSCJProcess.isDone(): numDone ("
+						+ computation.numDone.get() + ") > numTasks ("
+						+ computation.numTasks + "), finishing up " + id);
 				return true;
 			}
 
@@ -56,6 +60,9 @@ public abstract class GaloisSCJProcess<T> implements ForeachContext<T> {
 			if (computation.numDone.get() == computation.numTasks) {
 				if (computation.worklist.isEmpty()) {
 					computation.wakeupAll();
+					//System.out
+					//.println("\tGaloisSCJProcess.isDone(): worklist is empty, finish up "
+					//		+ id);
 					return true;
 				} else {
 					computation.numDone.decrementAndGet();
@@ -64,7 +71,8 @@ public abstract class GaloisSCJProcess<T> implements ForeachContext<T> {
 			}
 
 			// Otherwise, wait for some work
-			while (computation.numDone.get() < computation.numTasks && computation.worklist.isEmpty()) {
+			while (computation.numDone.get() < computation.numTasks
+					&& computation.worklist.isEmpty()) {
 				startWaiting();
 				try {
 					computation.moreWork.await();
@@ -76,9 +84,15 @@ public abstract class GaloisSCJProcess<T> implements ForeachContext<T> {
 			if (computation.numDone.get() == computation.numTasks) {
 				// Done, truly
 				computation.wakeupAll();
+//				System.out
+//				.println("\tGaloisSCJProcess.isDone(): numDone == numTasks, finish up "
+//						+ id);
 				return true;
 			} else if (computation.numDone.get() > computation.numTasks) {
 				// Error by another thread, finish up
+//				System.out
+//				.println("\tGaloisSCJProcess.isDone(): Error by another thread, finish up "
+//						+ id);
 				return true;
 			} else {
 				// More work to do!
@@ -90,15 +104,17 @@ public abstract class GaloisSCJProcess<T> implements ForeachContext<T> {
 		}
 	}
 
-	@Override	
+	@Override
 	public int getThreadId() {
 		return id;
 	}
 
 	private final void setupCurrentIteration() {
-		Iteration it = computation.newIteration(currentIteration, getThreadId());
+		Iteration it = computation
+		.newIteration(currentIteration, getThreadId());
 		if (it != currentIteration || first) {
-			// Try to reduce the number of Iteration.setCurrentIteration calls if we
+			// Try to reduce the number of Iteration.setCurrentIteration calls
+			// if we
 			// can
 			currentIteration = it;
 			Iteration.setCurrentIteration(it);
@@ -116,20 +132,25 @@ public abstract class GaloisSCJProcess<T> implements ForeachContext<T> {
 		}
 
 		if (item == null) {
-			computation.commitIteration(currentIteration, iterationId, item, true);
+			computation.commitIteration(currentIteration, iterationId, item,
+					true);
 		}
 		return item;
 	}
 
 	private final void doCommit(T item) {
 		try {
-			computation.commitIteration(currentIteration, iterationId, item, (numCommitted & computation.lockCoalescing) == 0);
-			// XXX(ddn): This count will be incorrect for ordered executors because
+			computation.commitIteration(currentIteration, iterationId, item,
+					(numCommitted & computation.lockCoalescing) == 0);
+			// XXX(ddn): This count will be incorrect for ordered executors
+			// because
 			// commitIteration only puts an iteration into ready to commit
-			numCommitted++;			
+			numCommitted++;
 		} catch (IterationAbortException _) {
-			// an iteration has thrown WorkNotUsefulException/WorkNotProgressiveException,
-			// and tries to commit before it goes to RTC (i.e. completes), another thread
+			// an iteration has thrown
+			// WorkNotUsefulException/WorkNotProgressiveException,
+			// and tries to commit before it goes to RTC (i.e. completes),
+			// another thread
 			// signals it to abort itself
 			readd(item);
 			doAbort();
@@ -139,7 +160,8 @@ public abstract class GaloisSCJProcess<T> implements ForeachContext<T> {
 	private final void doAbort() {
 		computation.abortIteration(currentIteration);
 		numAborted++;
-		// TODO(ddn): Implement this better using control algo! Needed something fast
+		// TODO(ddn): Implement this better using control algo! Needed something
+		// fast
 		// to make boruvka work.
 		final int logFactor = 4;
 		final int mask = (1 << logFactor) - 1;
@@ -164,7 +186,7 @@ public abstract class GaloisSCJProcess<T> implements ForeachContext<T> {
 
 	/**
 	 * Re-add item to worklist in case of abort.
-	 *
+	 * 
 	 * @param item
 	 */
 	private void readd(T item) {
@@ -184,6 +206,7 @@ public abstract class GaloisSCJProcess<T> implements ForeachContext<T> {
 	protected abstract void body(T item, ForeachContext<T> context);
 
 	public void scjTask_process(Task<Void> now) throws Exception {
+//		System.out.println("GaloisSCJComputation.doCall() called on " + id);
 		first = true;
 		try {
 			L1: while (true) {
@@ -199,7 +222,8 @@ public abstract class GaloisSCJProcess<T> implements ForeachContext<T> {
 							break;
 						}
 					}
-
+					// System.out.println("GaloisProcess " + id +
+					// "; doCall() iteration " + iterationId);
 					try {
 						body(item, this);
 						doCommit(item);
@@ -216,16 +240,23 @@ public abstract class GaloisSCJProcess<T> implements ForeachContext<T> {
 							numAborted++;
 							computation.abortIteration(currentIteration);
 						}
+						e.printStackTrace();
 						throw new ExecutionException(e);
 					}
 
 					if (computation.yield) {
+//						System.out
+//						.println("GaloisSCJProcess computation has yielded, stopping process "
+//								+ id);
 						break L1;
 					}
 				}
 
 				// Slow check
 				if (isDone()) {
+//					System.out
+//					.println("GaloisSCJProcess isDone() returned true, stopping process "
+//							+ id);
 					break;
 				}
 			}
@@ -234,6 +265,9 @@ public abstract class GaloisSCJProcess<T> implements ForeachContext<T> {
 			computation.wakeupAll();
 			currentIteration = null;
 			Iteration.setCurrentIteration(null);
+//			System.out
+//			.println("GaloisSCJProcess processing did finish, stopping process "
+//					+ id);
 		}
 	}
 
@@ -245,7 +279,8 @@ public abstract class GaloisSCJProcess<T> implements ForeachContext<T> {
 	@Override
 	public void add(final T t, byte flags) {
 		final ForeachContext<T> ctx = this;
-		if (GaloisRuntime.getRuntime().needMethodFlag(flags, MethodFlag.SAVE_UNDO)) {
+		if (GaloisRuntime.getRuntime().needMethodFlag(flags,
+				MethodFlag.SAVE_UNDO)) {
 			currentIteration.addCommitAction(new Callback() {
 				@Override
 				public void call() {
@@ -289,6 +324,5 @@ public abstract class GaloisSCJProcess<T> implements ForeachContext<T> {
 	public int getIterationId() {
 		return iterationId;
 	}
-
 
 }

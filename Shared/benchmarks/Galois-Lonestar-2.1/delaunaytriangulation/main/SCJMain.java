@@ -5,49 +5,66 @@ import galois.objects.graph.GNode;
 import galois.objects.graph.LongGraph;
 import galois.objects.graph.MorphGraph;
 import galois.runtime.ForeachContext;
-import galois.runtime.FullGaloisRuntime;
 import galois.runtime.GaloisRuntime;
-import galois.runtime.ReplayFeature;
 import galois.runtime.wl.ChunkedFIFO;
 import galois.runtime.wl.LIFO;
 import galois.runtime.wl.Priority;
+import galois_scj.GaloisSCJComputation;
+import galois_scj.GaloisSCJProcess;
+import galois_scj.ReducedGaloisRuntime;
+import galois_scj.UnorderedGaloisSCJComputation;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import scj.Task;
 import util.Launcher;
-import util.fn.Lambda2Void;
 
 public class SCJMain {
 
-	public void scjTask_triangulate(Task<Void> now, final LongGraph<Element> mesh, GNode<Element> largeNode) throws ExecutionException {
+	public void scjMainTask_triangulate(Task<Void> now, final LongGraph<Element> mesh, GNode<Element> largeNode) throws Exception {
 		Collection<GNode<Element>> initWL = new ArrayList<GNode<Element>>();
 		initWL.add(largeNode);
 		Launcher.getLauncher().startTiming();
-		FullGaloisRuntime.foreach(initWL, new Lambda2Void<GNode<Element>, ForeachContext<GNode<Element>>>() {
-			@Override
-			public void call(GNode<Element> currNode, ForeachContext<GNode<Element>> ctx) {
-				final Element data = currNode.getData(MethodFlag.CHECK_CONFLICT);
-				if (data.processed) {
-					return;
+		
+		Task<Void> finish = new Task<Void>();
+		this.scjTask_finishTriangulation(finish);
+		
+		//
+		GaloisSCJComputation<GNode<Element>> computation = new UnorderedGaloisSCJComputation<GNode<Element>>(initWL, 2, Priority.first(ChunkedFIFO.class).then(LIFO.class));		
+		for(int i = 0; i < computation.getNumTasks(); i++) {
+			GaloisSCJProcess<GNode<Element>> process = new GaloisSCJProcess<GNode<Element>>(computation, i) {
+
+				@Override
+				protected void body(GNode<Element> currNode, ForeachContext<GNode<Element>> ctx) {					
+					//System.out.println("SCJMain: called triangulate computation");
+					final Element data = currNode.getData(MethodFlag.CHECK_CONFLICT);
+			        if (data.processed) {
+			          return;
+			        }
+			        Cavity cavity = new Cavity(mesh, currNode);
+			        cavity.build();
+			        
+			        List<GNode<Element>> newNodes = cavity.update();
+			       			        
+			        for (GNode<Element> node : newNodes) {
+			          if (node.getData(MethodFlag.NONE).tuples != null) {
+			            ctx.add(node, MethodFlag.NONE);
+			          }
+			        }					
 				}
-				Cavity cavity = new Cavity(mesh, currNode);
-				cavity.build();
-				List<GNode<Element>> newNodes = cavity.update();
-				for (GNode<Element> node : newNodes) {
-					if (node.getData(MethodFlag.NONE).tuples != null) {
-						ctx.add(node, MethodFlag.NONE);
-					}
-				}
-			}
-		}, Priority.first(ChunkedFIFO.class).then(LIFO.class));
+				
+			};
+			
+			Task<Void> triangulateItem = new Task<Void>();
+			process.scjTask_process(triangulateItem);
+			
+			triangulateItem.hb(finish);
+		}
 		
 	}
-	
+
 	public void scjTask_finishTriangulation(Task<Void> now) {
 		Launcher.getLauncher().stopTiming();
 	}
@@ -59,7 +76,7 @@ public class SCJMain {
 	}
 
 	public LongGraph<Element> triangulate(Collection<Tuple> tuples, Tuple t1, Tuple t2, Tuple t3)
-	throws ExecutionException {
+	throws Exception {
 		/* The final mesh (containing the triangulation) */
 		LongGraph<Element> mesh = createGraph();
 
@@ -88,7 +105,8 @@ public class SCJMain {
 		for (Tuple tuple : tuples) {
 			large_triangle.tuples.add(tuple);
 		}
-		triangulate(mesh, large_node);
+		
+		this.scjMainTask_triangulate(new Task<Void>(), mesh, large_node);
 
 		return mesh;
 	}
@@ -101,9 +119,10 @@ public class SCJMain {
 		System.err.println("okay.");
 	}
 
-	public void run(String args[]) throws ExecutionException, IOException {
-		FullGaloisRuntime.initialize(2, false, false, ReplayFeature.Type.NO, false, false);
-
+	public void run(String args[]) throws Exception {
+		ReducedGaloisRuntime.initialize(false, false);
+		//FullGaloisRuntime.initialize(2, false, false, ReplayFeature.Type.NO, false, false);
+		
 		if (Launcher.getLauncher().isFirstRun()) {
 			System.err.println("Lonestar Benchmark Suite v3.0");
 			System.err.println("Copyright (C) 2007, 2008, 2009, 2010 The University of Texas at Austin");
@@ -147,7 +166,7 @@ public class SCJMain {
 		System.err.println();
 	}
 
-	public static void main(String[] args) throws ExecutionException, IOException {
+	public static void main(String[] args) throws Exception {
 		SCJMain main = new SCJMain();
 		main.run(args);
 	}

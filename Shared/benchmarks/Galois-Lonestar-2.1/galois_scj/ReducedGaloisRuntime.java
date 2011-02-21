@@ -21,7 +21,7 @@ public class ReducedGaloisRuntime extends GaloisRuntime {
 			instance.invalidate();
 		}
 
-		instance = new ReducedGaloisRuntime(useSerial, ignoreUserFlags, MethodFlag.NONE);
+		instance = new ReducedGaloisRuntime(useSerial, ignoreUserFlags, MethodFlag.ALL);
 	}
 
 	private final boolean useSerial;
@@ -41,7 +41,9 @@ public class ReducedGaloisRuntime extends GaloisRuntime {
 	
 	@Override
 	public boolean needMethodFlag(byte flags, byte option) {
-		return ((flags & mask) & option) != 0;
+		byte theMask = Iteration.getCurrentIteration() == null ? MethodFlag.NONE : mask;
+		
+		return ((flags & theMask) & option) != 0;
 	}
 
 	@Override

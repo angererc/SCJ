@@ -233,7 +233,7 @@ abstract class AbstractConcurrentExecutor<T> implements Executor {
   }
 
   protected abstract class Process implements Callable<Object>, ForeachContext<T> {
-    private final int id;
+    protected final int id;
     Thread thread;
     protected int numCommitted;
     protected int numAborted;
