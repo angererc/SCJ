@@ -31,7 +31,7 @@ public class Features {
 
   private static ReplayFeature replayFeature;
 
-  static void initialize(int numThreads, ReplayFeature.Type replayFeatureType) {
+  public static void initialize(int numThreads, ReplayFeature.Type replayFeatureType) {
     if (replayFeature != null)
       replayFeature.invalidate();
 

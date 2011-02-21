@@ -269,6 +269,7 @@ public final class FullGaloisRuntime extends GaloisRuntime {
 		current.executor.onUndo(it, action);
 	}
 
+	@Override
 	public void onRelease(Iteration it, ReleaseCallback action) {
 		checkValidity();
 		current.executor.onRelease(it, action);
@@ -625,6 +626,7 @@ public final class FullGaloisRuntime extends GaloisRuntime {
 		return ignoreUserFlags;
 	}
 
+	@Override
 	public boolean inRoot() {
 		checkValidity();
 		return current.executor == root;

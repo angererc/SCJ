@@ -17,10 +17,13 @@ public abstract class GaloisRuntime {
 	public abstract void onUndo(Iteration it, Callback callback);
 	
 	public abstract void onCommit(Iteration currentIteration, Callback callback);
+	public abstract void onRelease(Iteration it, ReleaseCallback action);
+	
 	public abstract int getMaxThreads();
 	public abstract boolean ignoreUserFlags();
 	public abstract void invalidate();
 
-
+	public abstract boolean inRoot();
+	
 	public abstract void raiseConflict(Iteration iteration, Iteration iteration2);
 }

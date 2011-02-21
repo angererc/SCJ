@@ -139,7 +139,7 @@ public class Iteration {
    *
    * @param cm
    */
-  void addReleaseAction(ReleaseCallback callback) {
+  public void addReleaseAction(ReleaseCallback callback) {
     releaseActions.add(callback);
   }
 

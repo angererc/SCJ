@@ -68,7 +68,7 @@ public final class Task<R> extends RecursiveAction {
 	void scheduleAsNormalTask(Object receiver, String taskName, Object... params) {
 		init_unsynchronized(receiver, taskName, params);
 		Task<?> now = Now.get();
-		assert(now != null) : "no now activation found!!!";
+		assert(now != null) : "no 'now' task found!!!";
 		now.retain_unsynchronized(this);
 		
 		//if(DEBUG)

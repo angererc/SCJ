@@ -5,6 +5,7 @@ import galois.runtime.Callback;
 import galois.runtime.GaloisRuntime;
 import galois.runtime.Iteration;
 import galois.runtime.IterationAbortException;
+import galois.runtime.ReleaseCallback;
 
 public class ReducedGaloisRuntime extends GaloisRuntime {
 
@@ -40,6 +41,11 @@ public class ReducedGaloisRuntime extends GaloisRuntime {
 	}
 	
 	@Override
+	public boolean inRoot() {
+		return Iteration.getCurrentIteration() == null;
+	}
+	
+	@Override
 	public boolean needMethodFlag(byte flags, byte option) {
 		byte theMask = Iteration.getCurrentIteration() == null ? MethodFlag.NONE : mask;
 		
@@ -54,6 +60,11 @@ public class ReducedGaloisRuntime extends GaloisRuntime {
 	@Override
 	public void onCommit(Iteration currentIteration, Callback callback) {
 		currentIteration.addCommitAction(callback);
+	}
+	
+	@Override
+	public void onRelease(Iteration it, ReleaseCallback action) {
+		it.addReleaseAction(action);
 	}
 
 	@Override
