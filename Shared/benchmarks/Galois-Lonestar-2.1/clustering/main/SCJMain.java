@@ -63,7 +63,7 @@ public class SCJMain {
 		return lights;
 	}
 
-	public void run(LeafNode[] inLights) throws Exception {
+	private void run(LeafNode[] inLights) throws Exception {
 		this.scjMainTask_clustering(new Task<Void>(), inLights);
 	}
 	

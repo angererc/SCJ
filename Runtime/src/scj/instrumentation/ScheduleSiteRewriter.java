@@ -65,16 +65,13 @@ public class ScheduleSiteRewriter implements ClassFileTransformer {
 			cc = classPool.makeClass(new java.io.ByteArrayInputStream(classfileBuffer));
 			//System.out.println("did insert class in class pool");
 			//cc = classPool.get(className);
-			//System.out.println("got class from class pool ");
-			//Thread.sleep(1000);
-			CtMethod[] methods = cc.getMethods();
-			for (int k=0; k<methods.length; k++) {				
-				if (methods[k].getLongName().startsWith(javaClassName)) {
-					//System.out.println("instrumenting method " + methods[k]);
-					instrumentMethod(methods[k]);					
-				} else {
-					//System.out.println("no body; cannot instrument method " + methods[k].getLongName() + " (class name = " + javaClassName + ")");
-				}
+			//System.out.println("got class from class pool " + className);
+			//Thread.sleep(1000);			
+			CtMethod[] methods = cc.getDeclaredMethods();
+			for (int k=0; k<methods.length; k++) {			
+				assert methods[k].getLongName().startsWith(javaClassName);
+				//System.out.println("instrumenting method " + methods[k]);
+				instrumentMethod(methods[k]);									
 			}
 			
 			// return the new bytecode array:
