@@ -38,7 +38,7 @@ import util.fn.Lambda2Void;
 public class Main {
   public static void main(String[] args) throws Exception {
 	  FullGaloisRuntime.initialize(2, false, false, ReplayFeature.Type.NO, false, false);
-	  Features.initialize(FullGaloisRuntime.getFullRuntime().getMaxThreads(), ReplayFeature.Type.RECORD);
+	  Features.initialize(GaloisRuntime.getRuntime().getMaxThreads(), ReplayFeature.Type.RECORD);
 	  
     int count = args.length > 0 ? Integer.valueOf(args[0]) : 100000;
     if (Launcher.getLauncher().isFirstRun()) {
