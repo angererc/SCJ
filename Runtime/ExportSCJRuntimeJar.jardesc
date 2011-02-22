@@ -11,7 +11,7 @@
         </sealing>
     </manifest>
     <selectedElements exportClassFiles="true" exportJavaFiles="false" exportOutputFolder="false">
-        <javaElement handleIdentifier="=SCJRuntime/src"/>
         <javaElement handleIdentifier="=SCJRuntime/Shared\/src"/>
+        <javaElement handleIdentifier="=SCJRuntime/src"/>
     </selectedElements>
 </jardesc>
