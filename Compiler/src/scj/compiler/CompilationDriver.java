@@ -3,6 +3,11 @@ package scj.compiler;
 import java.io.File;
 import java.io.IOException;
 
+import javassist.ClassPool;
+import javassist.CtClass;
+import javassist.NotFoundException;
+
+import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.ipa.callgraph.AnalysisCache;
 import com.ibm.wala.ipa.callgraph.AnalysisOptions;
@@ -27,6 +32,7 @@ public abstract class CompilationDriver {
 	
 	protected final CompilerOptions compilerOptions;
 	
+	//wala stuff
 	private AnalysisCache cache;
 	private AnalysisScope scope;
 	private ClassHierarchy classHierarchy;
@@ -34,6 +40,9 @@ public abstract class CompilationDriver {
 	private AnalysisOptions options;
 	private CallGraph cg;
 	private PointerAnalysis pointerAnalysis;
+	
+	//javassist stuff
+	private ClassPool classPool;;
 	
 	protected CompilationDriver(CompilerOptions opts) {
 		this.compilerOptions = opts;
@@ -43,8 +52,13 @@ public abstract class CompilationDriver {
 		return this.compilerOptions;
 	}
 	
-	public void compile() throws ClassHierarchyException, IOException, IllegalArgumentException, CallGraphBuilderCancelException {
+	public abstract void analyze() throws Exception;
+	
+	public void compile() throws Exception {
 		this.setUpWala();
+		this.analyze();
+		
+		this.emitCode();
 	}
 	
 	public Iterable<Entrypoint> entrypoints() {
@@ -94,5 +108,42 @@ public abstract class CompilationDriver {
 		cg = builder.makeCallGraph(options, null);
 		pointerAnalysis = builder.getPointerAnalysis();
 	}	
-
+	
+	public abstract boolean wantsToRewrite(IClass iclass);
+	public abstract void rewrite(IClass iclass, CtClass ctclass) throws Exception;
+	
+	public void emitCode() throws Exception {
+		String outputFolder = compilerOptions.outputFolder();
+		classPool = ClassPool.getDefault();
+		
+		for(IClass iclass : classHierarchy) {
+			System.out.print(".");
+			if(this.wantsToRewrite(iclass)) {					
+				CtClass ctclass = null;
+				if(iclass.getSource() == null) {
+					String classname = iclass.getName().getPackage().toString().replace('/', '.') + "." + iclass.getName().getClassName();
+//					if(DEBUG)
+//						System.err.println("Warning: no input source for class " + iclass + ". Trying to load through javassist: " + classname);
+					try {
+						ctclass = classPool.get(classname);
+					} catch(NotFoundException e) {
+						//e.printStackTrace();
+					}
+				} else {
+//					if(DEBUG)
+//						System.err.println("Found input source for class " + iclass);
+					ctclass = classPool.makeClass(iclass.getSource());
+				}
+				
+				if(ctclass != null) {
+					this.rewrite(iclass, ctclass);
+					if(ctclass.isModified()) {
+						ctclass.writeFile(outputFolder);
+					}
+				} else {
+					System.err.println("Warning: wasn't able to create a CtClass for " + iclass + ". Did not compile it.");
+				}
+			}				
+		}
+	}
 }

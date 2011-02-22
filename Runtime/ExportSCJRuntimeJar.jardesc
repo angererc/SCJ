@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="MacRoman" standalone="no"?>
 <jardesc>
-    <jar path="SCJRuntime/scj_runtime.jar"/>
+    <jar path="SCJRuntime/Shared/libs/scj_runtime.jar"/>
     <options buildIfNeeded="true" compress="true" descriptionLocation="/SCJRuntime/ExportSCJRuntimeJar.jardesc" exportErrors="true" exportWarnings="true" includeDirectoryEntries="false" overwrite="true" saveDescription="true" storeRefactorings="false" useSourceFolders="false"/>
     <storedRefactorings deprecationInfo="true" structuralOnly="false"/>
     <selectedProjects/>

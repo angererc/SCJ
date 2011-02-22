@@ -1,10 +1,5 @@
 package scj.compiler;
 
-import java.io.IOException;
-
-import com.ibm.wala.ipa.callgraph.CallGraphBuilderCancelException;
-import com.ibm.wala.ipa.cha.ClassHierarchyException;
-
 public class Compiler {
 
 	public final CompilerOptions options;
@@ -13,10 +8,9 @@ public class Compiler {
 		this.options = opts;
 	}
 	
-	public void compile() throws ClassHierarchyException, IOException, IllegalArgumentException, CallGraphBuilderCancelException {
+	public void compile() throws Exception {
 		CompilationDriver driver = options.getCompilationDriver();
 		driver.compile();
-		
 	}
 	
 	/*
@@ -31,7 +25,7 @@ public class Compiler {
 	 * usage:
 	 * scj.Compiler [options]* applicationFile1 applicationFile2 ...
 	 */
-	public static void main(String[] args) throws ClassHierarchyException, IOException, IllegalArgumentException, CallGraphBuilderCancelException {		
+	public static void main(String[] args) throws Exception {		
 		Compiler c = new Compiler(new CompilerOptions(args));
 		c.compile();
 	}

@@ -18,7 +18,7 @@ import com.ibm.wala.util.io.FileProvider;
 public class CompilerOptions {
 	
 	private ArrayList<String> applicationFiles = new ArrayList<String>();
-	private String exclusionsFile;
+	private String exclusionsFile = "scj/compiler/wala/Exclusions.txt";
 	private String outputFolder = "./scj_build/";
 	private String standardScopeFile = "scj/compiler/wala/StandardScope.txt";
 	
@@ -50,7 +50,7 @@ public class CompilerOptions {
 			if(this.compilationDriver != null) {
 				throw new IllegalArgumentException("Only one -opt=xyz option allowed");
 			}
-			
+			this.compilationDriver = new ScheduleSitesOnlyCompilation(this);
 		} else if(opt.startsWith("-output=")) {
 			this.outputFolder = opt.substring(8);
 		} else if(opt.startsWith("-exclusions=")) {
@@ -86,8 +86,8 @@ public class CompilerOptions {
 		return this.applicationFiles;
 	}
 	
-	public File openOutputFolder() {
-		return openFile(outputFolder);
+	public String outputFolder() {
+		return outputFolder;
 	}
 	public File openExclusionsFile() {		
 		return openFile(this.exclusionsFile);

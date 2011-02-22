@@ -1,0 +1,3 @@
+from inside the Compiler/scj_build directory (assuming scj_build is where the compiler put its stuff):
+
+java -Xbootclasspath/p:.:../../Shared/libs/jsr166y.jar:../../Shared/libs/scj_runtime.jar  testclasses.TrivialScheduling
