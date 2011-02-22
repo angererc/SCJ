@@ -9,7 +9,6 @@ import javassist.expr.ExprEditor;
 import javassist.expr.MethodCall;
 
 import com.ibm.wala.classLoader.IClass;
-import com.ibm.wala.classLoader.IMethod;
 
 public class ScheduleSitesOnlyCompilation extends CompilationDriver {
 
