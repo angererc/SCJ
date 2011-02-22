@@ -67,12 +67,24 @@ public abstract class CompilationDriver {
 	}
 	
 	public CallGraph callGraph() {
-		assert cg != null;
+		if(cg == null) {
+			//
+			System.out.println("Building call graph");
+			CallGraphBuilder builder = compilerOptions.createCallGraphBuilder(options, cache, scope, classHierarchy);
+			try {
+				cg = builder.makeCallGraph(options, null);
+			} catch(Exception e) {
+				throw new RuntimeException(e);
+			}
+			pointerAnalysis = builder.getPointerAnalysis();
+		}
 		return this.cg;
 	}
 	
 	public PointerAnalysis pointerAnalysis() {
-		assert pointerAnalysis != null;
+		if(pointerAnalysis == null) {
+			callGraph();
+		}
 		return pointerAnalysis;
 	}
 	
@@ -97,27 +109,28 @@ public abstract class CompilationDriver {
 			scope.addToScope(appScope);
 		}
 		//
+		System.out.println("Making class hierarchy");
 		classHierarchy = ClassHierarchy.make(scope);
 		ReferenceCleanser.registerClassHierarchy(classHierarchy);
 		//
 		this.entrypoints = new AllApplicationEntrypoints(scope, classHierarchy);
 		this.options = new AnalysisOptions(scope, entrypoints);
 	
-		//
-		CallGraphBuilder builder = compilerOptions.createCallGraphBuilder(options, cache, scope, classHierarchy);
-		cg = builder.makeCallGraph(options, null);
-		pointerAnalysis = builder.getPointerAnalysis();
 	}	
 	
+	public abstract String prefix();
 	public abstract boolean wantsToRewrite(IClass iclass);
 	public abstract void rewrite(IClass iclass, CtClass ctclass) throws Exception;
 	
 	public void emitCode() throws Exception {
 		String outputFolder = compilerOptions.outputFolder();
 		classPool = ClassPool.getDefault();
-		
+		int i = 0;
 		for(IClass iclass : classHierarchy) {
 			System.out.print(".");
+			if(i++ % 60 == 0) {
+				System.out.println();
+			}
 			if(this.wantsToRewrite(iclass)) {					
 				CtClass ctclass = null;
 				if(iclass.getSource() == null) {
@@ -137,11 +150,10 @@ public abstract class CompilationDriver {
 				
 				if(ctclass != null) {
 					this.rewrite(iclass, ctclass);
-					if(ctclass.isModified()) {
-						ctclass.writeFile(outputFolder);
-					}
+					ctclass.writeFile(outputFolder);					
 				} else {
-					System.err.println("Warning: wasn't able to create a CtClass for " + iclass + ". Did not compile it.");
+//					if(DEBUG)
+//						System.err.println("Warning: wasn't able to create a CtClass for " + iclass + ". Did not compile it.");
 				}
 			}				
 		}

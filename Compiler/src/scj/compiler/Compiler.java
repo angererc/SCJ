@@ -21,6 +21,8 @@ public class Compiler {
 	 * -output=path : folder where the generated files will be placed
 	 * -exclusions=file : file with exclusions (wala)
 	 * -standardScope=file : wala standard scope file
+	 * -prefix=prefix : add prefix to the output folder. Default is ""
+	 * -driverPrefix=YES|NO : do (not) add a prefix depending on the chosen compilation driver. Default is YES 
 	 * 
 	 * usage:
 	 * scj.Compiler [options]* applicationFile1 applicationFile2 ...

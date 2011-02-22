@@ -21,6 +21,8 @@ public class CompilerOptions {
 	private String exclusionsFile = "scj/compiler/wala/Exclusions.txt";
 	private String outputFolder = "./scj_build/";
 	private String standardScopeFile = "scj/compiler/wala/StandardScope.txt";
+	private String prefix;
+	private boolean driverPrefix = true;
 	
 	private CompilationDriver compilationDriver;
 	
@@ -57,6 +59,12 @@ public class CompilerOptions {
 			this.exclusionsFile = opt.substring(12);
 		} else if(opt.startsWith("-standardScope=")) {
 			this.standardScopeFile = opt.substring(15);
+		} else if(opt.startsWith("-prefix=")) {
+			this.prefix = opt.substring(8);
+		} else if(opt.equals("-driverPrefix=YES")) {
+			this.driverPrefix = true;
+		} else if(opt.equals("-driverPrefix=NO")) {
+			this.driverPrefix = false;
 		} else {
 			if(opt.startsWith("-")) {
 				throw new IllegalArgumentException(opt);
@@ -87,8 +95,13 @@ public class CompilerOptions {
 	}
 	
 	public String outputFolder() {
-		return outputFolder;
+		String result = this.prefix == null ? outputFolder : outputFolder + prefix + "/";
+		if(this.driverPrefix) {
+			result = result + compilationDriver.prefix() + "/";
+		}
+		return result;
 	}
+	
 	public File openExclusionsFile() {		
 		return openFile(this.exclusionsFile);
 	}

@@ -18,6 +18,11 @@ public class ScheduleSitesOnlyCompilation extends CompilationDriver {
 	}
 
 	@Override
+	public String prefix() {
+		return "orig";
+	}
+	
+	@Override
 	public void analyze() throws Exception {
 		
 	}
@@ -34,14 +39,15 @@ public class ScheduleSitesOnlyCompilation extends CompilationDriver {
 
 	@Override
 	public boolean wantsToRewrite(IClass iclass) {
-		//here we assume that schedule sites are only allowed inside Task methods!
-		for(IMethod method : iclass.getDeclaredMethods()) {
-			String methodName = method.getName().toString();
-			if(methodName.startsWith(Task.NormalTaskMethodPrefix) || methodName.startsWith(Task.MainTaskMethodPrefix))
-				return true;
-			
-		}
-		return false;
+		return true;
+//		//here we assume that schedule sites are only allowed inside Task methods!
+//		for(IMethod method : iclass.getDeclaredMethods()) {
+//			String methodName = method.getName().toString();
+//			if(methodName.startsWith(Task.NormalTaskMethodPrefix) || methodName.startsWith(Task.MainTaskMethodPrefix))
+//				return true;
+//			
+//		}
+//		return false;
 	}
 	
 	private void instrumentMethod(final CtMethod method) throws CannotCompileException {

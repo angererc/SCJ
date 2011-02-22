@@ -12,6 +12,11 @@ public class SequentiallyConsistentCompilation extends ScheduleSitesOnlyCompilat
 	public SequentiallyConsistentCompilation(CompilerOptions opts) {
 		super(opts);
 	}
+	
+	@Override
+	public String prefix() {
+		return "sc";
+	}
 
 	@Override
 	public void rewrite(IClass iclass, CtClass ctclass) throws Exception {

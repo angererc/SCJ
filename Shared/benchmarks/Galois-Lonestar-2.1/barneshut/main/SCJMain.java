@@ -456,17 +456,22 @@ public final class SCJMain {
 			System.err.println("arguments: input_file_name");
 			System.exit(-1);
 		}
-		ReadInput(args[0], true);
-		df = new DecimalFormat("0.0000E00");
-		res = null;
 
-		Launcher.getLauncher().startTiming();
+		for(int i = 0; i < 10; i++) {
+			ReadInput(args[0], true);
+			df = new DecimalFormat("0.0000E00");
+			res = null;
+			
+			Launcher.getLauncher().startTiming();
+			
+			SCJMain main = new SCJMain();
+			main.scjMainTask_Main(new Task<Void>());
+			
+			Launcher.getLauncher().stopTiming();
+			System.out.println("Iteration " + i + ": " + Launcher.getLauncher().elapsedTime(true));
+			Launcher.getLauncher().reset();
+		}
 		
-		SCJMain main = new SCJMain();
-		main.scjMainTask_Main(new Task<Void>());
-		
-		Launcher.getLauncher().stopTiming();
-
 		if (Launcher.getLauncher().isFirstRun()) { // verify result
 			ReadInput(args[0], false);
 			OctTreeNodeData s_res = null;
