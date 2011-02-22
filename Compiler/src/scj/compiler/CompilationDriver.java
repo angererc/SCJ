@@ -42,7 +42,7 @@ public abstract class CompilationDriver {
 	private PointerAnalysis pointerAnalysis;
 	
 	//javassist stuff
-	private ClassPool classPool;;
+	protected ClassPool classPool;;
 	
 	protected CompilationDriver(CompilerOptions opts) {
 		this.compilerOptions = opts;
@@ -119,12 +119,15 @@ public abstract class CompilationDriver {
 	}	
 	
 	public abstract String prefix();
+	public void prepareEmitCode() throws Exception { }
+	public void cleanupEmitCode() { }
 	public abstract boolean wantsToRewrite(IClass iclass);
 	public abstract void rewrite(IClass iclass, CtClass ctclass) throws Exception;
 	
 	public void emitCode() throws Exception {
 		String outputFolder = compilerOptions.outputFolder();
 		classPool = ClassPool.getDefault();
+		this.prepareEmitCode();
 		int i = 0;
 		for(IClass iclass : classHierarchy) {
 			System.out.print(".");
@@ -157,5 +160,6 @@ public abstract class CompilationDriver {
 				}
 			}				
 		}
+		this.cleanupEmitCode();
 	}
 }

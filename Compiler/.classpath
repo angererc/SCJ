@@ -6,7 +6,7 @@
 	<classpathentry kind="src" path="Shared/benchmarks/Galois-Lonestar-2.1"/>
 	<classpathentry kind="src" path="Shared/libs_src/Galois-2.0/src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="Shared/libs/javassist.jar"/>
+	<classpathentry kind="lib" path="Shared/libs/javassist.jar" sourcepath="/Users/angererc/Projects/_ThirdPartyProjects/javassist-3.14.0-GA/src/main"/>
 	<classpathentry kind="lib" path="Shared/libs/jsr166y.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/com.ibm.wala.core"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/com.ibm.wala.shrike"/>
