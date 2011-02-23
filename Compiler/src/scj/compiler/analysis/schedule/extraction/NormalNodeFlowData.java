@@ -66,6 +66,11 @@ public class NormalNodeFlowData extends FlowData {
 		return loopContexts;
 	}
 
+	protected void addAllCurrentLoopContexts(Set<LoopContext> ctxts) {
+		this.loopContexts.addAll(ctxts);
+		this.currentContexts.addAll(ctxts);
+	}
+	
 	void initEmpty() {
 		assert this.isInitial();
 		this.loopContexts = new HashSet<LoopContext>();
@@ -213,7 +218,7 @@ public class NormalNodeFlowData extends FlowData {
 		out.println("Current Loop Contexts: " + this.currentContexts);
 		out.println("Scheduled Tasks: " + this.partialSchedule.nodesToString());
 		out.println("Phi Mappings: " + phiMappings);
-		out.println("HB Edges: " + this.partialSchedule.edgesToString());
+		out.println("Partial schedule: " + this.partialSchedule);
 	}
 
 	//return only those loop contexts that are valid at the current basic block

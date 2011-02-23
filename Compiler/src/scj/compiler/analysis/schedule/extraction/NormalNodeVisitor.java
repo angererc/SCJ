@@ -32,7 +32,7 @@ class NormalNodeVisitor extends Visitor {
 			int lhs = instruction.getReceiver();
 			int rhs = instruction.getUse(1);
 			
-			for(LoopContext loopContext : data.loopContexts()) {
+			for(LoopContext loopContext : data.currentLoopContexts()) {
 				//resolve the ssa variables
 				Set<TaskVariable> lhsVariables = data.taskVariableForSSAVariable(loopContext, lhs);
 				Set<TaskVariable> rhsVariables = data.taskVariableForSSAVariable(loopContext, rhs);

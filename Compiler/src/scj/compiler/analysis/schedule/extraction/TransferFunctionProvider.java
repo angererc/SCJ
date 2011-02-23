@@ -156,9 +156,12 @@ final class TransferFunctionProvider implements ITransferFunctionProvider<ISSABa
 					instruction.visit(visitor);
 				}
 				
+				System.out.println("==============" + data.basicBlock);
+				data.print(System.out);
+				
 				if(!node.isEntryBlock() && lhs.stateEquals(data)) {
 					if(DEBUG)
-						System.out.println("TransferFunctionProvider: node transfer function " + lhs + " value did NOT change");
+						System.out.println("TransferFunctionProvider: node transfer function " + lhs + " value did NOT change");					
 					return NOT_CHANGED;
 				} else {
 					if(DEBUG)

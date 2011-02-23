@@ -34,10 +34,45 @@ public final class JoinNodeFlowData extends NormalNodeFlowData {
 		//and for that we need the null as a flag of "nothing happened yet"		
 		if(DEBUG)
 			System.out.println("JoinNodeFlowData: joining " + basicBlock);
+		
+		//first merge all the data from non back edges
 		for(int i = 0; i < incoming.length; i++) {
 			EdgeFlowData edge = incoming[i];
 			assert edge != null; //should not happen after we ran the meet operator
-			this.mergeState(edge);			
+			
+			if( ! (edge instanceof BackEdgeFlowData)) {
+				assert ! edge.isInitial() : "guess that shouldn't happen, but if it wouldn't be a problem either...";
+				this.mergeState(edge.getData());
+			}			
+		}
+		
+		//now we contain all the variables that have been valid before the loop;
+		//forward their values to the new iteration by fixing their loop contexts
+		//we pretend those guys are phi variables
+		//at the same time we fix our currentLoopContexts
+		for(int i = 0; i < incoming.length; i++) {
+			EdgeFlowData edge = incoming[i];
+			if((edge instanceof BackEdgeFlowData) && ! edge.isInitial()) {
+				BackEdgeFlowData backEdge = (BackEdgeFlowData)edge;
+				for(TaskVariable tv : this.partialSchedule()) {
+					this.addPhiVariable(new PhiVariable(tv.loopContext.contextByAddingLoop(backEdge), tv.ssaVariable), tv);
+				}
+				
+				//add the back edge to our set of loop contexts
+				Set<LoopContext> newContexts = new HashSet<LoopContext>();
+				for(LoopContext lc : this.currentLoopContexts()) {
+					newContexts.add(lc.contextByAddingLoop(backEdge));
+				}
+				this.addAllCurrentLoopContexts(newContexts);
+			}			
+		}
+		
+		//now merge the backe dges
+		for(int i = 0; i < incoming.length; i++) {
+			EdgeFlowData edge = incoming[i];
+			if((edge instanceof BackEdgeFlowData) && ! edge.isInitial()) {
+				this.mergeState(edge.getData());
+			}			
 		}
 		
 		//now we unioned all edges; check that for all edges if an incoming data "knows" about lhs and rhs, it also knows the edge;
@@ -115,28 +150,6 @@ public final class JoinNodeFlowData extends NormalNodeFlowData {
 				}
 			}			
 		}
-	}
-	
-	//called in the constructor
-	private void mergeState(EdgeFlowData edge) {
-		
-		if(!edge.isInitial()) {
-			NormalNodeFlowData other = edge.getData();
-			assert ! other.isInitial();		
-			
-			this.mergeState(other);
-			
-			//we saw this edge, so add it to the list of loop contexts
-			if(edge instanceof BackEdgeFlowData) {
-				BackEdgeFlowData backEdge = (BackEdgeFlowData)edge;
-				Set<LoopContext> newContexts = new HashSet<LoopContext>();
-				for(LoopContext lc : this.loopContexts()) {
-					newContexts.add(lc.contextByAddingLoop(backEdge));
-				}
-				this.loopContexts().addAll(newContexts);
-			}
-		}
-		
 	}
 
 	@Override

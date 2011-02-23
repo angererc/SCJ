@@ -22,8 +22,7 @@ import com.ibm.wala.types.TypeReference;
 import com.ibm.wala.util.CancelException;
 import com.ibm.wala.util.debug.Assertions;
 import com.ibm.wala.util.graph.Acyclic;
-import com.ibm.wala.util.graph.dominators.Dominators;
-import com.ibm.wala.util.graph.impl.GraphInverter;
+import com.ibm.wala.util.graph.traverse.FloydWarshall;
 import com.ibm.wala.util.intset.IBinaryNaturalRelation;
 
 public class TaskScheduleSolver extends DataflowSolver<ISSABasicBlock, FlowData> {
@@ -51,7 +50,7 @@ public class TaskScheduleSolver extends DataflowSolver<ISSABasicBlock, FlowData>
 	final IR ir;
 	final ControlFlowGraph<SSAInstruction, ISSABasicBlock> cfg;
 	final IBinaryNaturalRelation backEdges;
-	final Dominators<ISSABasicBlock> postDominators;
+	final int[][] cfgShortestPaths;
 	private NormalNodeFlowData entry;
 	
 	public TaskScheduleSolver(IR ir, ControlFlowGraph<SSAInstruction, ISSABasicBlock> cfg) {
@@ -60,7 +59,10 @@ public class TaskScheduleSolver extends DataflowSolver<ISSABasicBlock, FlowData>
 		this.ir = ir;
 		this.cfg = cfg;
 		this.backEdges = Acyclic.computeBackEdges(cfg, cfg.entry());
-		this.postDominators = Dominators.make(GraphInverter.invert(cfg), cfg.exit());
+		
+		System.out.println("TaskScheduleSolver graphs: ");
+		System.out.println(cfg);
+		cfgShortestPaths = FloydWarshall.shortestPathLengths(ir.getControlFlowGraph());
 	}
 
 	@Override

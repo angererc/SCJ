@@ -4,7 +4,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.ibm.wala.ssa.ISSABasicBlock;
-import com.ibm.wala.util.graph.dominators.Dominators;
 
 public class LoopContext {
 	
@@ -50,15 +49,18 @@ public class LoopContext {
 
 	//not sure if that shortest paths thing is the most elegant or if there is some other property i could/have to use
 	//(e.g., dominance or something)
-	public boolean isCurrentAtBlock(ISSABasicBlock basicBlock, TaskScheduleSolver solver) {
-		Dominators<ISSABasicBlock> doms = solver.postDominators;
+	public boolean isCurrentAtBlock(ISSABasicBlock basicBlock, TaskScheduleSolver solver) {		
+		int[][] paths = solver.cfgShortestPaths;
+		int current = basicBlock.getGraphNodeId();
 		//if the basic block is "after" any to-block of any loop head, this loop context is not current
 		for(BackEdgeFlowData edge : backEdges) {
-			if(doms.isDominatedBy(edge.to, basicBlock)) {
+			int loophead = edge.to.getGraphNodeId();
+			if(basicBlock != edge.to && paths[current][loophead] == Integer.MAX_VALUE) {
 				System.out.println("LoopContext: isCurrentAtBlock returns false for block " + basicBlock + " and loop context " + this);
 				return false;
 			}			
 		}
+		//System.out.println("LoopContext: checking isCurrentAtBlock returns true for block " + basicBlock + " and loop context " + this);
 		return true;
 	}
 }
