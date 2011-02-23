@@ -10,8 +10,8 @@ import com.ibm.wala.ssa.SSAReturnInstruction;
 
 class JoinNodeVisitor extends NormalNodeVisitor {
 
-	public JoinNodeVisitor(JoinNodeFlowData data) {	
-		super(data);
+	public JoinNodeVisitor(TaskScheduleSolver solver, JoinNodeFlowData data) {	
+		super(solver, data);
 	}
 
 	private boolean isTaskPhi(SSAPhiInstruction instruction) {
@@ -46,7 +46,7 @@ class JoinNodeVisitor extends NormalNodeVisitor {
 				//then add the edge to the loop context and add a phi mapping
 				// "find value(s) before edge has been taken and record it for after edge has been taken
 				
-				for(LoopContext lc : incomingData.loopContexts()) {
+				for(LoopContext lc : incomingData.currentLoopContexts()) {
 					LoopContext nextContext;
 					if(edge instanceof BackEdgeFlowData) {
 						nextContext = lc.contextByAddingLoop((BackEdgeFlowData)edge);

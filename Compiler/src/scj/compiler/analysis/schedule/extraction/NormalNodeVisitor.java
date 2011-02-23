@@ -16,10 +16,13 @@ import com.ibm.wala.util.debug.Assertions;
 class NormalNodeVisitor extends Visitor {
 
 	protected final NormalNodeFlowData data;
+	protected final TaskScheduleSolver solver;
 	
-	public NormalNodeVisitor(NormalNodeFlowData data) {
+	public NormalNodeVisitor(TaskScheduleSolver solver, NormalNodeFlowData data) {
+		assert solver != null;
 		assert data != null;
 		assert ! data.isInitial();
+		this.solver = solver;
 		this.data = data;
 	}
 
@@ -45,7 +48,7 @@ class NormalNodeVisitor extends Visitor {
 	@Override
 	public void visitNew(SSANewInstruction instruction) {
 		if(WalaConstants.isNewTaskSite(instruction)) {
-			for(LoopContext loopContext : data.loopContexts()) {
+			for(LoopContext loopContext : data.currentLoopContexts()) {
 				TaskVariable task = new TaskVariable(loopContext, instruction.getDef());
 				data.addTaskScheduleSite(task);
 				data.killHappensBeforeRelationshipsContaining(task);

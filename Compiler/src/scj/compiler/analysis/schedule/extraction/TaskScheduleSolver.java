@@ -22,6 +22,8 @@ import com.ibm.wala.types.TypeReference;
 import com.ibm.wala.util.CancelException;
 import com.ibm.wala.util.debug.Assertions;
 import com.ibm.wala.util.graph.Acyclic;
+import com.ibm.wala.util.graph.dominators.Dominators;
+import com.ibm.wala.util.graph.impl.GraphInverter;
 import com.ibm.wala.util.intset.IBinaryNaturalRelation;
 
 public class TaskScheduleSolver extends DataflowSolver<ISSABasicBlock, FlowData> {
@@ -49,13 +51,16 @@ public class TaskScheduleSolver extends DataflowSolver<ISSABasicBlock, FlowData>
 	final IR ir;
 	final ControlFlowGraph<SSAInstruction, ISSABasicBlock> cfg;
 	final IBinaryNaturalRelation backEdges;
+	final Dominators<ISSABasicBlock> postDominators;
 	private NormalNodeFlowData entry;
 	
 	public TaskScheduleSolver(IR ir, ControlFlowGraph<SSAInstruction, ISSABasicBlock> cfg) {
 		super(new BasicFramework<ISSABasicBlock, FlowData>(cfg, new TransferFunctionProvider()));
+		((TransferFunctionProvider)this.getProblem().getTransferFunctionProvider()).setSolver(this);
 		this.ir = ir;
 		this.cfg = cfg;
 		this.backEdges = Acyclic.computeBackEdges(cfg, cfg.entry());
+		this.postDominators = Dominators.make(GraphInverter.invert(cfg), cfg.exit());
 	}
 
 	@Override
@@ -90,7 +95,7 @@ public class TaskScheduleSolver extends DataflowSolver<ISSABasicBlock, FlowData>
 		if (IN && n.equals(cfg.entry())) {
 			entry = result;
 			result.initEmpty();
-			result.addLoopContext(LoopContext.emptyLoopContext());
+			result.addCurrentLoopContext(LoopContext.emptyLoopContext());
 		}
 		return result;
 	}

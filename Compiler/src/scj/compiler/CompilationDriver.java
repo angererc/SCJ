@@ -48,7 +48,7 @@ public abstract class CompilationDriver {
 	public abstract void analyze() throws Exception;
 	
 	public void compile() throws Exception {
-		this.setUpWala();
+		this.setUpCompiler();
 		this.analyze();
 		
 		this.emitCode();
@@ -76,7 +76,7 @@ public abstract class CompilationDriver {
 		return cache.getIR(method);
 	}
 	
-	public void setUpWala() throws IOException, ClassHierarchyException, IllegalArgumentException, CallGraphBuilderCancelException {
+	public void setUpCompiler() throws IOException, ClassHierarchyException, IllegalArgumentException, CallGraphBuilderCancelException {
 		assert cache == null;
 		cache = new AnalysisCache();
 		ReferenceCleanser.registerCache(cache);

@@ -8,8 +8,12 @@ public class Compiler {
 		this.options = opts;
 	}
 	
+	public CompilationDriver compilationDriver() {
+		return options.compilationDriver();
+	}
+	
 	public void compile() throws Exception {
-		CompilationDriver driver = options.compilationDriver();
+		CompilationDriver driver = compilationDriver();
 		driver.compile();
 	}
 	

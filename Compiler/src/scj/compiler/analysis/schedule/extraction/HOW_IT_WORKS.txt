@@ -66,5 +66,8 @@ use 0 comes from edge 0, use 1 comes from edge 1 etc). Therefore, for each use i
 edge and the corresponding flow data. For each loop context in this data we a) expand the loop context if it's a
 back edge and b) add a mapping between the phi variable and the tasks it may point to to the current flow data mapping. 
 
+== Computing the TaskSchedule ==
 
+The main work of computing the TaskSchedule from the partial schedule of the exit node is done in the WalaTaskScheduleManager.
+ 
 

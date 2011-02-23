@@ -35,10 +35,10 @@ public class OptimizingCompilation extends CompilationDriver {
 	}
 
 	@Override
-	public void analyze() throws Exception {
-		computeCallGraph();
+	public void analyze() throws Exception {		
 		findTaskMethods();
 		computeTaskSchedules();
+		computeCallGraph();
 	}
 
 	@Override
@@ -80,10 +80,11 @@ public class OptimizingCompilation extends CompilationDriver {
 	}
 
 	public void computeCallGraph() {
+		System.out.println("Computing call graph");
 		assert(cg == null);
 		//
 		this.walaOptions = new AnalysisOptions(scope(), entrypoints());
-		System.out.println("Building call graph");
+		
 		CallGraphBuilder builder = compilerOptions.createCallGraphBuilder(walaOptions, cache(), scope(), classHierarchy());
 		try {
 			cg = builder.makeCallGraph(walaOptions, null);
@@ -105,6 +106,7 @@ public class OptimizingCompilation extends CompilationDriver {
 
 
 	public void findTaskMethods() {
+		System.out.println("Finding task methods");
 		this.taskMethods = new HashSet<IMethod>();
 		this.mainTaskMethods = new HashSet<IMethod>();
 		ClassHierarchy classHierarchy = this.classHierarchy();
@@ -126,6 +128,7 @@ public class OptimizingCompilation extends CompilationDriver {
 	}
 
 	public void computeTaskSchedules() {
+		System.out.println("Computing task schedules");
 		this.taskSchedulesByMethod = new HashMap<IMethod, TaskSchedule<Integer, ?>>();
 		//
 		for(IMethod taskMethod : taskMethods) {

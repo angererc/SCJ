@@ -199,7 +199,7 @@ public final class TaskSchedule<TV, SM extends TaskScheduleManager<TV>> {
 	public void print(PrintStream out) {
 		for(int i = 0; i < relations.length; i++) {
 			for(int j = 0; j < relations.length; j++) {
-				out.println(i + " " + relations[i][j] + " " + j);			
+				out.println(i + "(" + this.nodeForTaskVariable(i) + ") " + relations[i][j] + " " + j + "(" + this.nodeForTaskVariable(j) + ")");			
 			}
 		}
 		

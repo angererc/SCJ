@@ -4,7 +4,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.Map.Entry;
+
+import scj.compiler.wala.util.SimpleGraph;
 
 import com.ibm.wala.ssa.ISSABasicBlock;
 
@@ -56,8 +57,8 @@ public final class JoinNodeFlowData extends NormalNodeFlowData {
 	}
 	
 	@Override
-	public NormalNodeVisitor createNodeVisitor() {
-		return new JoinNodeVisitor(this);
+	public NormalNodeVisitor createNodeVisitor(TaskScheduleSolver solver) {
+		return new JoinNodeVisitor(solver, this);
 	}
 	
 	EdgeFlowData incomingEdgeAtPosition(int pos) {
@@ -96,20 +97,20 @@ public final class JoinNodeFlowData extends NormalNodeFlowData {
 	protected void filterUnreliableEdges(EdgeFlowData edge) { //iterate a copy of my hb edges and check whether the incoming data agrees
 		if(!edge.isInitial()) {
 			NormalNodeFlowData other = edge.getData();
-			
-			Iterator<TaskVariable> lhsNodes = this.partialSchedule.iterator();
+			SimpleGraph<TaskVariable> partialSchedule = this.partialSchedule();
+			Iterator<TaskVariable> lhsNodes = partialSchedule.iterator();
 			while(lhsNodes.hasNext()) {
 				TaskVariable lhs = lhsNodes.next();
 				
-				Iterator<TaskVariable> rhsNodes = this.partialSchedule.getSuccNodes(lhs);
+				Iterator<TaskVariable> rhsNodes = partialSchedule.getSuccNodes(lhs);
 				while(rhsNodes.hasNext()) {
 					TaskVariable rhs = rhsNodes.next();
-					
+					SimpleGraph<TaskVariable> otherSchedule = other.partialSchedule();
 					//check for each edge whether the other guy agrees on a) the existence of the task variables and b) on the edge lhs->rhs
-					if(other.partialSchedule.containsNode(lhs) && other.partialSchedule.containsNode(rhs)) {
-						if(! other.partialSchedule.hasEdge(lhs, rhs))
+					if(otherSchedule.containsNode(lhs) && otherSchedule.containsNode(rhs)) {
+						if(! otherSchedule.hasEdge(lhs, rhs))
 							//not sure if this throws an concurrent modification exception
-							this.partialSchedule.removeEdge(lhs, rhs);
+							partialSchedule.removeEdge(lhs, rhs);
 					}
 				}
 			}			
@@ -123,21 +124,16 @@ public final class JoinNodeFlowData extends NormalNodeFlowData {
 			NormalNodeFlowData other = edge.getData();
 			assert ! other.isInitial();		
 			
-			this.loopContexts.addAll(other.loopContexts);
-			this.partialSchedule.addAllNodesAndEdges(other.partialSchedule);
-			
-			if (other.phiMappings != null) {
-				for(Entry<PhiVariable, Set<TaskVariable>> entry : other.phiMappings.entrySet()) {
-					this.addAllPhiVariables(entry.getKey(), entry.getValue());
-				}
-			}
+			this.mergeState(other);
 			
 			//we saw this edge, so add it to the list of loop contexts
 			if(edge instanceof BackEdgeFlowData) {
 				BackEdgeFlowData backEdge = (BackEdgeFlowData)edge;
-				for(LoopContext lc : this.loopContexts) {
-					this.loopContexts.add(lc.contextByAddingLoop(backEdge));
+				Set<LoopContext> newContexts = new HashSet<LoopContext>();
+				for(LoopContext lc : this.loopContexts()) {
+					newContexts.add(lc.contextByAddingLoop(backEdge));
 				}
+				this.loopContexts().addAll(newContexts);
 			}
 		}
 		

@@ -12,15 +12,18 @@ import com.ibm.wala.ssa.SSAInstruction;
 
 final class TransferFunctionProvider implements ITransferFunctionProvider<ISSABasicBlock, FlowData> {
 		
-	TransferFunctionProvider() {
+	private TaskScheduleSolver solver;
+	TransferFunctionProvider() {		
+	}
+	
+	void setSolver(TaskScheduleSolver solver) {
+		this.solver = solver;
 	}
 	
 	private final AbstractMeetOperator<FlowData> meetOperator = new AbstractMeetOperator<FlowData>() {
 		
 		private final boolean DEBUG = false;
-		//the meet operator will not be called if there is only one incoming edge; if there
-		//are more than one incoming edges, we are a join node and use a different node visitor to handle
-		//potential phi nodes
+
 		@Override
 		public boolean isUnaryNoOp() {
 			return false;
@@ -146,7 +149,8 @@ final class TransferFunctionProvider implements ITransferFunctionProvider<ISSABa
 				assert ! rhsData.isInitial();
 				
 				NormalNodeFlowData data = rhsData.duplicate(((NormalNodeFlowData)lhs).basicBlock);
-				NormalNodeVisitor visitor = data.nodeVisitor();
+				data.killOldLoopContexts(solver);
+				NormalNodeVisitor visitor = data.nodeVisitor(solver);
 				
 				for(SSAInstruction instruction : node) {
 					instruction.visit(visitor);
