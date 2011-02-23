@@ -1,0 +1,70 @@
+This package contains the code that extracts the task schedule from the bytecode. Therefore, it is very dependent on Wala.
+
+The main class is the ScheduleExtractionDriver that provides methods for the subtasks. 
+It can extract one task schedule at a time, starting from a task or a mainTask method.
+(We assume that schedule sites are only allowed inside task methods; otherwise, the methods that contain schedule
+sites must be inlined before).
+
+The extraction is a data flow analysis implemented in TaskScheduleSolver 
+that works on the SSA Control Flow Graph of the task method. Before that, exception edges to the exit node are removed
+by UnhandledExceptionsPrunedCFG because an unhandled exception in a task method results in a program termination
+and therefore don't have to be handled. If we wouldn't do that, we couldn't extract a meaningful schedule because
+most of the scheduled tasks would disappear at the exit node join.
+
+We have four different types of flow data; two for edges and two for nodes.
+All of those are created in the very beginning by the TaskScheduleSolver for each basic block and edge in the CFG.
+
+A join node is a node with more than one incoming edge, otherwise it's a normal node.
+Forward edges are implemented by EdgeFlowData; back edges inherit from that, too, but we handle them specially
+and use their type later to know when we are dealing with a back edge.
+
+== Loop contexts ==
+
+A loop context is a set of back edges (we use the BackEdgeFlowData for that) that have been taken in the current
+context.
+We start with an empty set and whenever we encounter a back edge we expand the loop context.
+
+== Task and Phi Variables ==
+The data flow analysis deals with TaskVariables and PhiVariables. Variables are a pair of the ssa variable number
+and the loop context they have been encountered in.
+
+== Node Flow Data ==
+A normal node flow data keeps track of loop contexts, a partial schedule and a mapping from phi nodes to task variables.
+The partial schedule is a graph consisting of schedule sites (i.e., their TaskVariables) and edges if we saw a hb statement.
+
+The join node flow data keeps an array of the incoming edge flow data. We do this mostly because the wala framework
+doesn't give us all the information we need in the merge operation so we have to wait until the node body is visited.
+The JoinNodeFlowData defers the merge.
+The join node is also the place where we expand all loop contexts with a back edge that has been computed.
+
+== Wala Data Flow analysis ==
+
+Wala creates a node flow data and and edge flow data for each node/edge in the CFG. Those object instances stay the same
+and are mutated during analysis. The basic approach is like this: compute a temporary FlowData by merging incoming data (called "rhs"
+in the transfer functions); analyze node body; check if temp data is different from stored data (called "lhs" in 
+transfer functions); If yes, mutate stored data and continue.
+
+The TransferFunctionProvider is a factory for the meet, join, etc. data flow operations.
+We don't do any real computation on the edges, we only use the edge flow data so that we can keep track of back edges
+and use them inside the loop contexts.
+
+The meet transfer function is just to forward the data for a normal (non-join) node.
+For a join node, we merge all the incoming data and check if that result equals the previous result.
+
+The transfer function for a node is implemented by visiting the body of the node.
+
+In a normal node we handle schedule sites (new Task instructions) and -> instructions (invoke hb() instructions). 
+In SSA a normal node cannot contain a phi node.
+for a schedule site, we add a task variable for each loop context the flow data comes with to the partial schedule set.
+For an hb instruction we resolve all possible lhs task variables and all possible rhs task variables for the given ssa
+variable in each loop context. lhs and rhs are singleton sets if the ssa variable comes from a new site. But if the
+ssa variable is a phi we might find several variables.
+We then add hb edges to the partial schedule between all the variables we found.
+
+A join node visitor additionally handles phi instructions. The phi uses correspond to the incoming edges (i.e., the
+use 0 comes from edge 0, use 1 comes from edge 1 etc). Therefore, for each use in a phi instruction we find the corresponding
+edge and the corresponding flow data. For each loop context in this data we a) expand the loop context if it's a
+back edge and b) add a mapping between the phi variable and the tasks it may point to to the current flow data mapping. 
+
+
+

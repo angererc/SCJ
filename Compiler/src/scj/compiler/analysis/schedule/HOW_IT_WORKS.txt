@@ -1,0 +1,18 @@
+This package contains the core of the schedule analysis.
+
+It tries to be totally independent from Wala or any other frontend. For this, it uses generics and "Managers" that provide
+access to whatever underlaying "database" is used.
+
+== TaskSchedule ==
+
+The task schedule is a full matrix containing relations between all task variables in a task method. 
+
+In the TaskSchedule, we use integers to represent "TaskVariables". The mapping between such an int and the "original" (e.g., wala-dependent)
+object is given by the TaskScheduleManager.
+
+The relations are computed automatixally inside the constructor of the TaskSchedule. For this, the TaskSchedule actually delegates
+to the TaskScheduleManager and only provides methods to add relations to the TaskSchedule. It does not care whether those relations
+make any sense, it only cares about some structural issues (e.g., don't set a relation twice, if a rel b then b inverse_rel a, relations function
+(matrix) is complete).
+
+This process gets rid of the loop contexts and compresses the partial schedule into a full task variable schedule.

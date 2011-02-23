@@ -10,14 +10,10 @@ import javassist.NotFoundException;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.ipa.callgraph.AnalysisCache;
-import com.ibm.wala.ipa.callgraph.AnalysisOptions;
 import com.ibm.wala.ipa.callgraph.AnalysisScope;
-import com.ibm.wala.ipa.callgraph.CallGraph;
-import com.ibm.wala.ipa.callgraph.CallGraphBuilder;
 import com.ibm.wala.ipa.callgraph.CallGraphBuilderCancelException;
 import com.ibm.wala.ipa.callgraph.Entrypoint;
 import com.ibm.wala.ipa.callgraph.impl.AllApplicationEntrypoints;
-import com.ibm.wala.ipa.callgraph.propagation.PointerAnalysis;
 import com.ibm.wala.ipa.cha.ClassHierarchy;
 import com.ibm.wala.ipa.cha.ClassHierarchyException;
 import com.ibm.wala.ssa.IR;
@@ -37,9 +33,6 @@ public abstract class CompilationDriver {
 	private AnalysisScope scope;
 	private ClassHierarchy classHierarchy;
 	private Iterable<Entrypoint> entrypoints;
-	private AnalysisOptions options;
-	private CallGraph cg;
-	private PointerAnalysis pointerAnalysis;
 	
 	//javassist stuff
 	protected ClassPool classPool;;
@@ -66,31 +59,17 @@ public abstract class CompilationDriver {
 		return this.entrypoints;
 	}
 	
-	public CallGraph callGraph() {
-		if(cg == null) {
-			//
-			System.out.println("Building call graph");
-			CallGraphBuilder builder = compilerOptions.createCallGraphBuilder(options, cache, scope, classHierarchy);
-			try {
-				cg = builder.makeCallGraph(options, null);
-			} catch(Exception e) {
-				throw new RuntimeException(e);
-			}
-			pointerAnalysis = builder.getPointerAnalysis();
-		}
-		return this.cg;
-	}
-	
-	public PointerAnalysis pointerAnalysis() {
-		if(pointerAnalysis == null) {
-			callGraph();
-		}
-		return pointerAnalysis;
-	}
-	
 	public ClassHierarchy classHierarchy() {
 		assert classHierarchy != null;
 		return classHierarchy;
+	}
+	
+	public AnalysisScope scope() {
+		return this.scope;
+	}
+	
+	public AnalysisCache cache() {
+		return this.cache;
 	}
 	
 	public IR irForMethod(IMethod method) {
@@ -113,8 +92,7 @@ public abstract class CompilationDriver {
 		classHierarchy = ClassHierarchy.make(scope);
 		ReferenceCleanser.registerClassHierarchy(classHierarchy);
 		//
-		this.entrypoints = new AllApplicationEntrypoints(scope, classHierarchy);
-		this.options = new AnalysisOptions(scope, entrypoints);
+		this.entrypoints = new AllApplicationEntrypoints(scope, classHierarchy);	
 	
 	}	
 	

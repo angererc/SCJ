@@ -9,21 +9,25 @@ public class Compiler {
 	}
 	
 	public void compile() throws Exception {
-		CompilationDriver driver = options.getCompilationDriver();
+		CompilationDriver driver = options.compilationDriver();
 		driver.compile();
 	}
 	
 	/*
 	 * Flags:
 	 * -opt=sc : generate sequentially consistent code
-	 * -opt=x : optimization level x
+
 	 * -opt=orig : no optimizations, only rewrites schedule sites
 	 * -output=path : folder where the generated files will be placed
 	 * -exclusions=file : file with exclusions (wala)
 	 * -standardScope=file : wala standard scope file
 	 * -prefix=prefix : add prefix to the output folder. Default is ""
-	 * -driverPrefix=YES|NO : do (not) add a prefix depending on the chosen compilation driver. Default is YES 
+	 * -driverPrefix=YES|NO : do (not) add a prefix depending on the chosen compilation driver. Default is YES
+	 * -zeroXCFAPolicy=ALLOCATIONS|SMUSH_STRINGS|SMUSH_THROWABLES|SMUSH_PRIMITIVE_HOLDERS|SMUSH_MANY|CONSTANT_SPECIFIC flags for the policy used for the ZeroX or ZeroXContainer CFA builders
 	 * 
+	 * -opt=ContextSensitivity:CFABuilderType  a tuple separated by : that specifies all the optimization details
+	 * ContextSensitivity = default
+	 * CFABuilderType = one of RTA, ZeroXCFA, ZeroXContainerCFA or nCFA where n is an integer.
 	 * usage:
 	 * scj.Compiler [options]* applicationFile1 applicationFile2 ...
 	 */

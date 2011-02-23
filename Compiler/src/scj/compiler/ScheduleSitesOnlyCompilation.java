@@ -1,17 +1,15 @@
 package scj.compiler;
 
-import scj.Runtime;
-import scj.Task;
 import javassist.CannotCompileException;
 import javassist.CtClass;
 import javassist.CtMethod;
-import javassist.expr.ExprEditor;
-import javassist.expr.MethodCall;
 
 import com.ibm.wala.classLoader.IClass;
 
 public class ScheduleSitesOnlyCompilation extends CompilationDriver {
 
+	private final ScheduleSiteEditor scheduleSiteEditor = new ScheduleSiteEditor();
+	
 	protected ScheduleSitesOnlyCompilation(CompilerOptions opts) {
 		super(opts);
 	}
@@ -56,26 +54,8 @@ public class ScheduleSitesOnlyCompilation extends CompilationDriver {
 		if(method.getLongName().startsWith("sun.reflect."))
 			return;
 		
-		method.instrument(new ExprEditor() {
-
-			@Override
-			public void edit(MethodCall m) throws CannotCompileException {
-				if(m.getMethodName().startsWith(Task.MainTaskMethodPrefix)) {
-					String statement = "{ " + Runtime.ScheduleMainTaskMethod + "($0, \"" + m.getMethodName() + "\", $args); }";							
-					if(Task.DEBUG)
-						System.out.println("found schedule site: " + m.getMethodName() + " in " + method.getLongName() + "; replacing it with " + statement);
-					m.replace(statement);
-				} else if (m.getMethodName().startsWith(Task.NormalTaskMethodPrefix)) {
-					String statement = "{ " + Runtime.ScheduleNormalTaskMethod + "($0, \"" + m.getMethodName() + "\", $args); }";
-					if(Task.DEBUG)
-						System.out.println("found schedule site: " + m.getMethodName() + " in  " + method.getLongName() + "; replacing it with " + statement);
-					m.replace(statement);
-				}
-			}
-			
-		});
-		
-		
+		scheduleSiteEditor.setMethod(method);
+		method.instrument(scheduleSiteEditor);		
 	}
 
 }

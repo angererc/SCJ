@@ -7,11 +7,15 @@ import java.util.ArrayList;
 import com.ibm.wala.ipa.callgraph.AnalysisCache;
 import com.ibm.wala.ipa.callgraph.AnalysisOptions;
 import com.ibm.wala.ipa.callgraph.AnalysisScope;
+import com.ibm.wala.ipa.callgraph.CallGraphBuilder;
 import com.ibm.wala.ipa.callgraph.ContextSelector;
-import com.ibm.wala.ipa.callgraph.impl.DefaultContextSelector;
 import com.ibm.wala.ipa.callgraph.impl.Util;
-import com.ibm.wala.ipa.callgraph.propagation.PropagationCallGraphBuilder;
-import com.ibm.wala.ipa.callgraph.propagation.cfa.nCFAContextSelector;
+import com.ibm.wala.ipa.callgraph.propagation.SSAContextInterpreter;
+import com.ibm.wala.ipa.callgraph.propagation.cfa.ZeroXCFABuilder;
+import com.ibm.wala.ipa.callgraph.propagation.cfa.ZeroXContainerCFABuilder;
+import com.ibm.wala.ipa.callgraph.propagation.cfa.ZeroXInstanceKeys;
+import com.ibm.wala.ipa.callgraph.propagation.cfa.nCFABuilder;
+import com.ibm.wala.ipa.callgraph.propagation.rta.BasicRTABuilder;
 import com.ibm.wala.ipa.cha.ClassHierarchy;
 import com.ibm.wala.util.io.FileProvider;
 
@@ -25,6 +29,9 @@ public class CompilerOptions {
 	private boolean driverPrefix = true;
 	
 	private CompilationDriver compilationDriver;
+	
+	private String[] optimizationLevel;
+	private int policy = 0;
 	
 	public CompilerOptions(String[] args) {
 		this.parseArguments(args);
@@ -53,6 +60,14 @@ public class CompilerOptions {
 				throw new IllegalArgumentException("Only one -opt=xyz option allowed");
 			}
 			this.compilationDriver = new ScheduleSitesOnlyCompilation(this);
+		} else if(opt.startsWith("-opt=")) {
+			if(this.compilationDriver != null) {
+				throw new IllegalArgumentException("Only one -opt=xyz option allowed");
+			}
+			this.compilationDriver = new OptimizingCompilation(this);
+			parseOptimizationLevel(opt.substring(5));
+		} else if(opt.startsWith("-zeroXCFAPolicy=")) {
+			parseCFAPolicy(opt.substring(11));
 		} else if(opt.startsWith("-output=")) {
 			this.outputFolder = opt.substring(8);
 		} else if(opt.startsWith("-exclusions=")) {
@@ -70,6 +85,13 @@ public class CompilerOptions {
 				throw new IllegalArgumentException(opt);
 			}
 			applicationFiles.add(opt);
+		}
+	}
+	
+	private void parseOptimizationLevel(String levelString) {
+		optimizationLevel = levelString.split(":");
+		if(optimizationLevel.length != 2) {
+			throw new IllegalArgumentException("Illegal optimization level specification: " + levelString + ". It must follow the form contextSelector:cfaBuilder");
 		}
 	}
 	
@@ -106,14 +128,101 @@ public class CompilerOptions {
 		return openFile(this.exclusionsFile);
 	}
 
-	public CompilationDriver getCompilationDriver() {
+	public CompilationDriver compilationDriver() {
 		return compilationDriver;
 	}
 	
-	public PropagationCallGraphBuilder createCallGraphBuilder(AnalysisOptions options, AnalysisCache cache, AnalysisScope scope, ClassHierarchy classHierarchy) {
-		ContextSelector def = new DefaultContextSelector(options);
-	    ContextSelector nCFAContextSelector = new nCFAContextSelector(1, def);
-	    
-		return Util.makeZeroCFABuilder(options, cache, classHierarchy, scope, nCFAContextSelector, null);
+	public String[] optimizationLevel() {
+		return this.optimizationLevel;
+	}
+	
+	public ContextSelector createContextSelector(AnalysisOptions options) {
+		String contextType = optimizationLevel[0];
+		if(contextType.equals("default")) {
+			return null;
+		} else {
+			throw new IllegalArgumentException("Illegal context sensitivity: " + contextType);
+		}
+	}
+	
+	public SSAContextInterpreter createContextInterpreter() {
+		//for now we always return null;; not sure if the context interpreter is something a user may want to change...
+		return null;
+	}
+	  
+	private void parseCFAPolicy(String policyString) {
+		String[] parts = policyString.split("|");
+		policy = 0;
+		for(String part : parts) {
+			if(part.equals("ALLOCATIONS")) {
+				/**
+				   * An ALLOCATIONS - based policy distinguishes instances by allocation site. Otherwise, the policy distinguishes instances by
+				   * type.
+				   */
+				policy = policy | ZeroXInstanceKeys.ALLOCATIONS;
+			} else if(part.equals("SMUSH_STRINGS")) {
+				/**
+				   * A policy variant where String and StringBuffers are NOT disambiguated according to allocation site.
+				   */
+				policy = policy | ZeroXInstanceKeys.SMUSH_STRINGS;
+			} else if (part.equals("SMUSH_THROWABLES")) {
+				/**
+				   * A policy variant where {@link Throwable} instances are NOT disambiguated according to allocation site.
+				   * 
+				   */
+				policy = policy | ZeroXInstanceKeys.SMUSH_THROWABLES;
+			} else if (part.equals("SMUSH_PRIMITIVE_HOLDERS")) {
+				/**
+				   * A policy variant where if a type T has only primitive instance fields, then instances of type T are NOT disambiguated by
+				   * allocation site.
+				   */
+				policy = policy | ZeroXInstanceKeys.SMUSH_PRIMITIVE_HOLDERS;
+			} else if (part.equals("SMUSH_MANY")) {
+				/**
+				   * This variant counts the N, number of allocation sites of a particular type T in each method. If N > SMUSH_LIMIT, then these N
+				   * allocation sites are NOT distinguished ... instead there is a single abstract allocation site for <N,T>
+				   * 
+				   * Probably the best choice in many cases.
+				   */
+				policy = policy | ZeroXInstanceKeys.SMUSH_MANY;
+			} else if (part.equals("CONSTANT_SPECIFIC")) {
+				/**
+				   * Should we use constant-specific keys?
+				   */
+				policy = policy | ZeroXInstanceKeys.CONSTANT_SPECIFIC;
+			} else {
+				throw new IllegalArgumentException("Illegal CFA policy: " + part);
+			}
+		}
+	}
+	
+	public CallGraphBuilder createCallGraphBuilder(AnalysisOptions options, AnalysisCache cache, AnalysisScope scope, ClassHierarchy classHierarchy) {
+		String builderType = this.optimizationLevel[1];
+		if(builderType.equals("RTA")) {
+			Util.addDefaultSelectors(options, classHierarchy);
+		    Util.addDefaultBypassLogic(options, scope, Util.class.getClassLoader(), classHierarchy);
+
+		    return new BasicRTABuilder(classHierarchy, options, cache, this.createContextSelector(options), this.createContextInterpreter());
+		} if(builderType.equals("ZeroXCFA")) {
+			Util.addDefaultSelectors(options, classHierarchy);
+		    Util.addDefaultBypassLogic(options, scope, Util.class.getClassLoader(), classHierarchy);
+			return new ZeroXCFABuilder(classHierarchy, options, cache, this.createContextSelector(options), this.createContextInterpreter(), policy);
+		} else if(builderType.equals("ZeroXContainerCFA")) {
+			Util.addDefaultSelectors(options, classHierarchy);
+		    Util.addDefaultBypassLogic(options, scope, Util.class.getClassLoader(), classHierarchy);
+			options.setUseConstantSpecificKeys(true);
+			return new ZeroXContainerCFABuilder(classHierarchy, options, cache, this.createContextSelector(options), this.createContextInterpreter(), policy);
+		} else {
+			if(! builderType.endsWith("CFA")) {
+				throw new IllegalArgumentException("Illegal call graph builder type in optimization level: " + builderType);
+			}
+			
+			int n = Integer.parseInt(builderType.substring(0, builderType.length() - 4));
+			System.out.println("CompilerOptions: using nCFA with n=" + n);
+			
+			Util.addDefaultSelectors(options, classHierarchy);
+		    Util.addDefaultBypassLogic(options, scope, Util.class.getClassLoader(), classHierarchy);
+			return new nCFABuilder(n, classHierarchy, options, cache, this.createContextSelector(options), this.createContextInterpreter());
+		}
 	}
 }
