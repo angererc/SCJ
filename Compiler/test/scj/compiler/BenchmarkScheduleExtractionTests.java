@@ -77,9 +77,9 @@ public class BenchmarkScheduleExtractionTests {
 			TaskSchedule<Integer, ?> schedule = driver.taskScheduleForTaskMethod(method);
 			RelTester t = new RelTester(schedule);
 			
-			System.out.println("=====================");
-			System.out.println(method.getName());
-			schedule.print(System.out);	
+//			System.out.println("=====================");
+//			System.out.println(method.getName());
+//			schedule.print(System.out);	
 			
 			String mName = method.getName().toString();
 			if(mName.equals("scjTask_ComputeTimeStep")) {

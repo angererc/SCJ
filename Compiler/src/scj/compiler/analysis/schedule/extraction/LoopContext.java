@@ -56,7 +56,7 @@ public class LoopContext {
 		for(BackEdgeFlowData edge : backEdges) {
 			int loophead = edge.to.getGraphNodeId();
 			if(basicBlock != edge.to && paths[current][loophead] == Integer.MAX_VALUE) {
-				System.out.println("LoopContext: isCurrentAtBlock returns false for block " + basicBlock + " and loop context " + this);
+				//System.out.println("LoopContext: isCurrentAtBlock returns false for block " + basicBlock + " and loop context " + this);
 				return false;
 			}			
 		}
