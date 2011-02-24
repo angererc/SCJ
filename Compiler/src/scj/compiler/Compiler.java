@@ -29,9 +29,10 @@ public class Compiler {
 	 * -driverPrefix=YES|NO : do (not) add a prefix depending on the chosen compilation driver. Default is YES
 	 * -zeroXCFAPolicy=ALLOCATIONS|SMUSH_STRINGS|SMUSH_THROWABLES|SMUSH_PRIMITIVE_HOLDERS|SMUSH_MANY|CONSTANT_SPECIFIC flags for the policy used for the ZeroX or ZeroXContainer CFA builders
 	 * 
-	 * -opt=ContextSensitivity:CFABuilderType  a tuple separated by : that specifies all the optimization details
+	 * -opt=ContextSensitivity:CFABuilderType:Analyses  a tuple separated by : that specifies all the optimization details
 	 * ContextSensitivity = default
 	 * CFABuilderType = one of RTA, ZeroXCFA, ZeroXContainerCFA or nCFA where n is an integer.
+	 * Analyses = one of ESC, ESC_SA, SA
 	 * usage:
 	 * scj.Compiler [options]* applicationFile1 applicationFile2 ...
 	 */

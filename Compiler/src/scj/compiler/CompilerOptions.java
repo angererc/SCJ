@@ -4,6 +4,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import scj.compiler.analysis.schedule.DummyScheduleAnalysis;
+import scj.compiler.analysis.schedule.FullScheduleAnalysis;
+import scj.compiler.analysis.schedule.ScheduleAnalysis;
+
 import com.ibm.wala.ipa.callgraph.AnalysisCache;
 import com.ibm.wala.ipa.callgraph.AnalysisOptions;
 import com.ibm.wala.ipa.callgraph.AnalysisScope;
@@ -90,8 +94,8 @@ public class CompilerOptions {
 	
 	private void parseOptimizationLevel(String levelString) {
 		optimizationLevel = levelString.split(":");
-		if(optimizationLevel.length != 2) {
-			throw new IllegalArgumentException("Illegal optimization level specification: " + levelString + ". It must follow the form contextSelector:cfaBuilder");
+		if(optimizationLevel.length != 3) {
+			throw new IllegalArgumentException("Illegal optimization level specification: " + levelString + ". It must follow the form contextSelector:cfaBuilder:analyses");
 		}
 	}
 	
@@ -152,7 +156,7 @@ public class CompilerOptions {
 	  
 	private void parseCFAPolicy(String policyString) {
 		String[] parts = policyString.split("|");
-		policy = 0;
+		policy = ZeroXInstanceKeys.NONE;
 		for(String part : parts) {
 			if(part.equals("ALLOCATIONS")) {
 				/**
@@ -193,6 +197,15 @@ public class CompilerOptions {
 			} else {
 				throw new IllegalArgumentException("Illegal CFA policy: " + part);
 			}
+		}
+	}
+	
+	public ScheduleAnalysis createScheduleAnalysis(OptimizingCompilation compiler) {
+		String analysesType = this.optimizationLevel[2];
+		if(analysesType.contains("SA")){
+			return new FullScheduleAnalysis(compiler);
+		} else {
+			return new DummyScheduleAnalysis();
 		}
 	}
 	

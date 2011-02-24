@@ -8,6 +8,7 @@ import java.util.Set;
 
 import org.junit.Test;
 
+import scj.compiler.analysis.schedule.FullScheduleAnalysis;
 import scj.compiler.analysis.schedule.TaskSchedule;
 
 import com.ibm.wala.classLoader.IMethod;
@@ -34,47 +35,26 @@ public class BenchmarkScheduleExtractionTests {
 		return new Compiler(options);
 	}
 	
-	private static class RelTester {
-		TaskSchedule<Integer, ?> schedule;
-		RelTester(TaskSchedule<Integer, ?> schedule) {
-			this.schedule = schedule;
-		}
-		
-		void assertHB(int a, int b) {
-			assertTrue(schedule.relationForNodes(a, b) == TaskSchedule.Relation.happensBefore);
-			assertTrue(schedule.relationForNodes(b, a) == TaskSchedule.Relation.happensAfter);
-		}
-		
-		void assertSingleton(int a) {
-			assertTrue(schedule.relationForNodes(a, a) == TaskSchedule.Relation.singleton);
-		}
-		
-		void assertOrdered(int a) {
-			assertTrue(schedule.relationForNodes(a, a) == TaskSchedule.Relation.ordered);
-		}
-		
-		void assertUnordered(int a) {
-			assertTrue(schedule.relationForNodes(a, a) == TaskSchedule.Relation.unordered);
-		}
-	}
-	
 	@Test
 	public void compileBarneshutDefault_ZeroXCFA() throws Exception {
-		Compiler compiler = compilerWithArgs(galoisBenchmarkArgs("barneshut", "default:ZeroXCFA"));
+		Compiler compiler = compilerWithArgs(galoisBenchmarkArgs("barneshut", "default:ZeroXCFA:SA"));
 		OptimizingCompilation driver = (OptimizingCompilation)compiler.compilationDriver();
-		driver.setUpCompiler();		
-		driver.findTaskMethods();
-		driver.computeTaskSchedules();
 		
-		Set<IMethod> mainTaskMethods = driver.mainTaskMethods();
-		Set<IMethod> taskMethods = driver.taskMethods();
+		driver.setUpCompiler();
+		FullScheduleAnalysis sa = (FullScheduleAnalysis)driver.getOrCreateScheduleAnalysis();
+		
+		sa.findTaskMethods();
+		sa.computeTaskSchedules();
+		
+		Set<IMethod> mainTaskMethods = sa.mainTaskMethods();
+		Set<IMethod> taskMethods = sa.taskMethods();
 		
 		Set<IMethod> allTaskMethods = new HashSet<IMethod>();
 		allTaskMethods.addAll(mainTaskMethods);
 		allTaskMethods.addAll(taskMethods);
 				
 		for(IMethod method : allTaskMethods) {
-			TaskSchedule<Integer, ?> schedule = driver.taskScheduleForTaskMethod(method);
+			TaskSchedule<Integer, ?> schedule = sa.taskScheduleForTaskMethod(method);
 			RelTester t = new RelTester(schedule);
 			
 //			System.out.println("=====================");
@@ -130,5 +110,34 @@ public class BenchmarkScheduleExtractionTests {
 			}
 		}
 		
+	}
+	
+	/**
+	 * 
+	 *
+	 */
+	
+	private static class RelTester {
+		TaskSchedule<Integer, ?> schedule;
+		RelTester(TaskSchedule<Integer, ?> schedule) {
+			this.schedule = schedule;
+		}
+		
+		void assertHB(int a, int b) {
+			assertTrue(schedule.relationForNodes(a, b) == TaskSchedule.Relation.happensBefore);
+			assertTrue(schedule.relationForNodes(b, a) == TaskSchedule.Relation.happensAfter);
+		}
+		
+		void assertSingleton(int a) {
+			assertTrue(schedule.relationForNodes(a, a) == TaskSchedule.Relation.singleton);
+		}
+		
+		void assertOrdered(int a) {
+			assertTrue(schedule.relationForNodes(a, a) == TaskSchedule.Relation.ordered);
+		}
+		
+		void assertUnordered(int a) {
+			assertTrue(schedule.relationForNodes(a, a) == TaskSchedule.Relation.unordered);
+		}
 	}
 }
