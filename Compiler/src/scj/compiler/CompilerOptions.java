@@ -4,6 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import scj.compiler.analysis.escape.DummyEscapeAnalysis;
+import scj.compiler.analysis.escape.EscapeAnalysis;
+import scj.compiler.analysis.escape.FullEscapeAnalysis;
 import scj.compiler.analysis.schedule.DummyScheduleAnalysis;
 import scj.compiler.analysis.schedule.FullScheduleAnalysis;
 import scj.compiler.analysis.schedule.ScheduleAnalysis;
@@ -205,7 +208,16 @@ public class CompilerOptions {
 		if(analysesType.contains("SA")){
 			return new FullScheduleAnalysis(compiler);
 		} else {
-			return new DummyScheduleAnalysis();
+			return new DummyScheduleAnalysis(compiler);
+		}
+	}
+	
+	public EscapeAnalysis createEscapeAnalysis(OptimizingCompilation compiler) {
+		String analysesType = this.optimizationLevel[2];
+		if(analysesType.contains("ESC")){
+			return new FullEscapeAnalysis(compiler);
+		} else {
+			return new DummyEscapeAnalysis();
 		}
 	}
 	

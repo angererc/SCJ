@@ -3,7 +3,6 @@ package scj.compiler;
 import static org.junit.Assert.*;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Set;
 
 import org.junit.Test;
@@ -41,17 +40,12 @@ public class BenchmarkScheduleExtractionTests {
 		OptimizingCompilation driver = (OptimizingCompilation)compiler.compilationDriver();
 		
 		driver.setUpCompiler();
+		driver.findTaskMethods();
 		FullScheduleAnalysis sa = (FullScheduleAnalysis)driver.getOrCreateScheduleAnalysis();
 		
-		sa.findTaskMethods();
 		sa.computeTaskSchedules();
 		
-		Set<IMethod> mainTaskMethods = sa.mainTaskMethods();
-		Set<IMethod> taskMethods = sa.taskMethods();
-		
-		Set<IMethod> allTaskMethods = new HashSet<IMethod>();
-		allTaskMethods.addAll(mainTaskMethods);
-		allTaskMethods.addAll(taskMethods);
+		Set<IMethod> allTaskMethods = driver.allTaskMethods();
 				
 		for(IMethod method : allTaskMethods) {
 			TaskSchedule<Integer, ?> schedule = sa.taskScheduleForTaskMethod(method);

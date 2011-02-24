@@ -49,9 +49,7 @@ public class SequentiallyConsistentCompilation extends ScheduleSitesOnlyCompilat
 		
 		//rewrite array accesses to call the Runtime array accessors
 		for(CtMethod method : ctclass.getDeclaredMethods()) {
-			if(ctclass.getName().startsWith("testclasses")) {
 				method.instrument(converter);
-			}
 		}
 		
 	}

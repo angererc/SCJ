@@ -21,6 +21,7 @@ public class AnalysisResult<Instance> {
 		public T map(Instance i);
 	}
 	
+	//translate the
 	public <T> AnalysisResult<T> collapse(MappingOperation<Instance, T> mapper) {
 		AnalysisResult<T> result = new AnalysisResult<T>();
 		

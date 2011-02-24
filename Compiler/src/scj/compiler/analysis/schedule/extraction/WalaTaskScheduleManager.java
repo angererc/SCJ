@@ -25,7 +25,7 @@ import com.ibm.wala.util.graph.traverse.FloydWarshall;
 public class WalaTaskScheduleManager implements TaskScheduleManager<Integer> {
 
 	public static WalaTaskScheduleManager make(SSACache cache, IR ir, NormalNodeFlowData flowData) {
-		assert WalaConstants.isTaskMethod(ir.getMethod().getReference());
+		assert WalaConstants.isNormalOrMainTaskMethod(ir.getMethod().getReference());
 		
 		WalaTaskScheduleManager result = new WalaTaskScheduleManager(ir, flowData.partialSchedule());
 		
@@ -50,7 +50,7 @@ public class WalaTaskScheduleManager implements TaskScheduleManager<Integer> {
 			SSAInstruction instruction = instructions.next();
 			if(instruction instanceof SSAInvokeInstruction) {
 				SSAInvokeInstruction invoke = (SSAInvokeInstruction)instruction;
-				if(WalaConstants.isTaskMethod(invoke.getDeclaredTarget())) {
+				if(WalaConstants.isNormalOrMainTaskMethod(invoke.getDeclaredTarget())) {
 					//the task as an ssa variable
 					int ssaTaskVariable = invoke.isStatic() ? invoke.getUse(0) : invoke.getUse(1);
 					

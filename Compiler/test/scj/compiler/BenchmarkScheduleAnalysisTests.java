@@ -36,11 +36,11 @@ public class BenchmarkScheduleAnalysisTests {
 		OptimizingCompilation driver = (OptimizingCompilation)compiler.compilationDriver();
 		
 		driver.setUpCompiler();
+		driver.findTaskMethods();
 		driver.computeCallGraph();
 		
 		FullScheduleAnalysis sa = (FullScheduleAnalysis)driver.getOrCreateScheduleAnalysis();
 		
-		sa.findTaskMethods();
 		sa.computeTaskSchedules();
 		sa.populateAnalysisSession();
 		AnalysisResult<CGNode> result = sa.runAnalysisOnMainTaskMethods();

@@ -29,7 +29,7 @@ public final class WalaConstants {
 	}
 	
 	//true for xschedTask_ or xschedMainTask_ methods
-	public static boolean isTaskMethod(MethodReference reference) {
+	public static boolean isNormalOrMainTaskMethod(MethodReference reference) {
 		String name = reference.getName().toString();
 		if(name.startsWith(Task.NormalTaskMethodPrefix)) {
 			assert reference.getReturnType().equals(TypeReference.Void);

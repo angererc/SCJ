@@ -26,14 +26,19 @@ public class CompileAllBenchmarks {
 		return new Compiler(options);
 	}
 	
-	@Test
+	//@Test
 	public void compileBarneshutOrig() throws Exception {
 		compilerWithArgs(galoisBenchmarkArgs("barneshut", "orig")).compile();		
 	}
 	
-	@Test
+	//@Test
 	public void compileBarneshutSC() throws Exception {
 		compilerWithArgs(galoisBenchmarkArgs("barneshut", "sc")).compile();		
+	}
+	
+	@Test
+	public void compileBarneshutOptimized() throws Exception {
+		compilerWithArgs(galoisBenchmarkArgs("barneshut", "default:ZeroXCFA:none")).compile();		
 	}
 	
 }

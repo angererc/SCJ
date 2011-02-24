@@ -41,7 +41,7 @@ public final class Runtime {
         }
         return unsafe;
     }
-	private static final Unsafe unsafe = getUnsafe();
+	public static final Unsafe unsafe = getUnsafe();
 
     private static final int byteBase = unsafe.arrayBaseOffset(byte[].class);
     private static final int charBase = unsafe.arrayBaseOffset(char[].class);
@@ -171,7 +171,10 @@ public final class Runtime {
 		unsafe.putShortVolatile(array, rawIndex(shortBase, shortScale, i), newValue);
 	}
 
-
+	public static double getDoubleVolatile(Object obj, long index) {
+		
+		return unsafe.getDoubleVolatile(obj, index);
+	}
 
 	
 }
