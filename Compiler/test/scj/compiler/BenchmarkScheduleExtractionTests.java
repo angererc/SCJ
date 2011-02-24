@@ -9,7 +9,7 @@ import java.util.Set;
 import org.junit.Test;
 
 import scj.compiler.analysis.schedule.FullScheduleAnalysis;
-import scj.compiler.analysis.schedule.TaskSchedule;
+import scj.compiler.analysis.schedule.extraction.TaskSchedule;
 
 import com.ibm.wala.classLoader.IMethod;
 

@@ -46,7 +46,6 @@ import java.util.Scanner;
 import java.util.zip.GZIPInputStream;
 
 import scj.Task;
-import scj.util.UtilityTasks;
 import util.Launcher;
 
 /**
@@ -358,7 +357,7 @@ public final class SCJMain {
 	public void scjMainTask_Main(Task<Void> now) throws Exception {
 		//create a linked list of chained iterations
 		Task<Void> later = new Task<Void>();
-		UtilityTasks.get().scjTask_join(later);
+		this.scjTask_join(later);
 		
 		for (int step = ntimesteps - 1; step >= 0; step--) { // time-step the system
 			Task<Void> iteration = new Task<Void>();
@@ -366,6 +365,10 @@ public final class SCJMain {
 			iteration.hb(later);
 			later = iteration;
 		} // end of time step
+	}
+	
+	public void scjTask_join(Task<Void> now) {
+		
 	}
 	
 	public void scjTask_ComputeTimeStep(Task<Void> now, final Integer step, Task<Void> later) throws Exception {
@@ -387,7 +390,7 @@ public final class SCJMain {
 		ComputeCenterOfMass(octree, root); // summarize subtree info in each internal node (plus restructure tree and sort bodies for performance reasons)
 
 		Task<Void> join = new Task<Void>();
-		UtilityTasks.get().scjTask_join(join);
+		this.scjTask_join(join);
 		
 		GaloisSCJComputation<GNode<OctTreeNodeData>> computation = new UnorderedGaloisSCJComputation<GNode<OctTreeNodeData>>(Arrays.asList(leaf), Priority.first(ChunkedFIFO.class).then(FIFO.class));		
 		for(int i = 0; i < computation.getNumTasks(); i++) {

@@ -1,4 +1,4 @@
-package scj.compiler.analysis.schedule;
+package scj.compiler.analysis.schedule.extraction;
 
 import java.util.List;
 import java.util.Set;

@@ -1,4 +1,4 @@
-package scj.compiler.analysis.schedule;
+package scj.compiler.analysis.schedule.extraction;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -14,7 +14,8 @@ public final class TaskSchedule<TV, SM extends TaskScheduleManager<TV>> {
 		happensBefore,
 		happensAfter,
 		ordered,
-		unordered;
+		unordered,
+		unknown; //an unknown relation can happen after the task schedule has been created and the schedule analysis runs. It represents the case where one or both task variables are phis
 		
 		public Relation inverse() {
 			switch(this) {
@@ -23,11 +24,13 @@ public final class TaskSchedule<TV, SM extends TaskScheduleManager<TV>> {
 			case happensAfter: return happensBefore;
 			case ordered: return ordered;
 			case unordered: return unordered;
+			case unknown: return unknown;
 			default: assert false; return null;
 			}
 		}
 	}
 	
+	private final String methodName;
 	//an ordering of all nodes; a "task variable" is the integer index of this array. the first n entries are all parameters coming into this task, the others
 	//are local schedule sites
 	private final ArrayList<TV> nodes;
@@ -39,7 +42,8 @@ public final class TaskSchedule<TV, SM extends TaskScheduleManager<TV>> {
 	//it also has some callbacks for the task schedule to get some information about parameters and such 
 	private final SM scheduleManager;
 	
-	public TaskSchedule(SM scheduleManager) {
+	public TaskSchedule(String methodName, SM scheduleManager) {
+		this.methodName = methodName;
 		this.scheduleManager = scheduleManager;
 		
 		nodes = new ArrayList<TV>(scheduleManager.formalTaskParameterNodes());
@@ -77,7 +81,10 @@ public final class TaskSchedule<TV, SM extends TaskScheduleManager<TV>> {
 		return var < numFormalTaskParameters;
 	}
 	
+	//important: this method may return -1 if the node is a phi task node.
+	//deal with it
 	public int taskVariableForNode(TV node) {
+		//assert(nodes.contains(node)) : "cannot map node " + node + " to task variable in " + this;
 		return nodes.indexOf(node);	
 	}
 	
@@ -96,6 +103,7 @@ public final class TaskSchedule<TV, SM extends TaskScheduleManager<TV>> {
 
 			@Override
 			public Integer next() {
+				//the task variable is equal to its index in the nodes array; so we just return the index
 				int res = nextIndex++;
 				return res;
 			}
@@ -154,9 +162,12 @@ public final class TaskSchedule<TV, SM extends TaskScheduleManager<TV>> {
 		};
 	}
 
+	//given a task variable, find the actuals that flow into the schedule site
+	//note that the array may contain -1 if the original ssa variable is a phi task node
+	//deal with it
 	public int[] actualsForTaskVariable(int taskVariable) {
 		assert ! isFormalParameterTaskVariable(taskVariable);
-		List<TV> params = scheduleManager.actualParametersForNode(nodeForTaskVariable(taskVariable));
+		List<TV> params = scheduleManager.actualParametersForNode(nodeForTaskVariable(taskVariable));		
 		int[] result = new int[params.size()];
 		for(int i = 0; i < result.length; i++) {
 			result[i] = taskVariableForNode(params.get(i));
@@ -176,23 +187,26 @@ public final class TaskSchedule<TV, SM extends TaskScheduleManager<TV>> {
 		relations[rhsIndex][lhsIndex] = rel.inverse();	
 	}
 	
-	public void addRelationForNodes(TV lhs, Relation rel, TV rhs) {
-		int lhsIndex = taskVariableForNode(lhs);
-		int rhsIndex = taskVariableForNode(rhs);
-		addRelationForTaskVariables(lhsIndex, rel, rhsIndex);	
-	}
-	
 	public SM taskScheduleManager() {
 		return scheduleManager;
 	}
 	
+	//returns Relation.unknown if lhs or rhs is a phi node
 	public Relation relationForNodes(TV lhs, TV rhs) {
 		int lhsIndex = taskVariableForNode(lhs);
 		int rhsIndex = taskVariableForNode(rhs);
-		return relations[lhsIndex][rhsIndex];		
+		if(lhsIndex < 0 || rhsIndex < 0) {
+			return Relation.unknown;
+		} else {
+			return relations[lhsIndex][rhsIndex];
+		}
 	}
 	
-	public Relation relationForTaskVariables(int lhs, int rhs) {	
+	//retrns Relation.unknown if lhs or rhs is a phi node
+	public Relation relationForTaskVariables(int lhs, int rhs) {
+		if(lhs < 0 || rhs < 0)
+			return Relation.unknown;
+		
 		return relations[lhs][rhs];		
 	}
 	
@@ -203,6 +217,11 @@ public final class TaskSchedule<TV, SM extends TaskScheduleManager<TV>> {
 			}
 		}
 		
+	}
+	
+	@Override
+	public String toString() {
+		return "TaskSchedule for " + methodName;
 	}
 	
 }

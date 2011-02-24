@@ -16,3 +16,17 @@ make any sense, it only cares about some structural issues (e.g., don't set a re
 (matrix) is complete).
 
 This process gets rid of the loop contexts and compresses the partial schedule into a full task variable schedule.
+
+== AnalysisSession ==
+
+There is a 1:1 correspondence between task methods and a task schedule.
+However, depending on context sensitivity the call graph can have many nodes that correspond to a method.
+Because we don't want to loose this sensitivity we create one analysis task per call graph node and associate it with the correct task schedule
+the analysis session keeps track of those
+
+The schedule.core package is independent from the Wala stuff and even from ssa or anything. In order for this to work we use
+TaskScheduleManager (esp. its subclass WalaTaskScheduleManager) to map from ssa variables to task variables and back.
+
+== Resolving virtual schedule sites ==
+The FullScheduleAnalysis also uses a special AnalysisTaskResolver to find possible tasks for a schedule site (for virtual sites). It does so by mapping the
+schedule site to the corresponding ssa variable, look up the invocation site and find all possible target nodes in the call graph for that invocation site.

@@ -7,8 +7,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import scj.compiler.analysis.schedule.TaskSchedule;
-import scj.compiler.analysis.schedule.TaskScheduleManager;
 import scj.compiler.wala.util.SimpleGraph;
 import scj.compiler.wala.util.WalaConstants;
 
@@ -60,7 +58,7 @@ public class WalaTaskScheduleManager implements TaskScheduleManager<Integer> {
 					SSANewInstruction newTaskInstruction = (SSANewInstruction)defUse.getDef(ssaTaskVariable);
 					assert WalaConstants.isTaskType(newTaskInstruction.getNewSite().getDeclaredType());					
 					result.newSitesBySSAVariable.put(ssaTaskVariable, newTaskInstruction);
-					result.callSitesBySSAVariable.put(ssaTaskVariable, invoke);
+					result.callSiteBySSAVariable.put(ssaTaskVariable, invoke);
 				
 				}
 			}
@@ -70,7 +68,7 @@ public class WalaTaskScheduleManager implements TaskScheduleManager<Integer> {
 	}
 	
 	private final HashMap<Integer, SSANewInstruction> newSitesBySSAVariable = new HashMap<Integer, SSANewInstruction>();
-	private final HashMap<Integer, SSAInvokeInstruction> callSitesBySSAVariable = new HashMap<Integer, SSAInvokeInstruction>();
+	private final HashMap<Integer, SSAInvokeInstruction> callSiteBySSAVariable = new HashMap<Integer, SSAInvokeInstruction>();
 	//the list of formal parameters that are actually task variables; other parameters are left out
 	//e.g., task method is foo(Task t, int x, Task a) then the formal parameters array is [t, a]
 	private final List<Integer> formalParameters = new ArrayList<Integer>();
@@ -89,18 +87,21 @@ public class WalaTaskScheduleManager implements TaskScheduleManager<Integer> {
 	}
 	
 	public SSAInvokeInstruction scheduleSiteForNode(Integer ssaVariable) {
-		return callSitesBySSAVariable.get(ssaVariable);
+		return callSiteBySSAVariable.get(ssaVariable);
 	}
 			
+	
+	//make sure that we only contain task variables in the actuals list!
 	@Override
 	public ArrayList<Integer> actualParametersForNode(Integer node) {
-		SSAInvokeInstruction invoke = callSitesBySSAVariable.get(node);
+		SSAInvokeInstruction invoke = callSiteBySSAVariable.get(node);
 		ArrayList<Integer> actuals = new ArrayList<Integer>();
 		
 		MethodReference target = invoke.getDeclaredTarget();
 		for(int i = 1; i < invoke.getNumberOfParameters(); i++) {
 			//MethodReference.getParameterType() does not include "this" but that's OK because "this" can never be a task anyways
 			if(WalaConstants.isTaskType(target.getParameterType(i-1))) {
+				assert invoke.getUse(i) >= 0 : "use " + i + " of invocation " + invoke + " should be positive: " + invoke.getUse(i);				
 				actuals.add(invoke.getUse(i));
 			}
 		}
@@ -115,8 +116,8 @@ public class WalaTaskScheduleManager implements TaskScheduleManager<Integer> {
 
 	@Override
 	public Set<Integer> scheduleSiteNodes() {
-		assert callSitesBySSAVariable.keySet().equals(newSitesBySSAVariable.keySet());
-		return callSitesBySSAVariable.keySet();
+		assert callSiteBySSAVariable.keySet().equals(newSitesBySSAVariable.keySet());
+		return callSiteBySSAVariable.keySet();
 	}
 
 	@Override
@@ -143,8 +144,12 @@ public class WalaTaskScheduleManager implements TaskScheduleManager<Integer> {
 			} 
 		}
 		
+		System.out.println("WalaTaskScheduleManager initializeFullSchedule");
+		System.out.println(ir);
+		
 		this.partialSchedule = null;
 		this.ir = null;
+		
 	}
 	
 	private boolean isOutsideLoop(int occurrence) {

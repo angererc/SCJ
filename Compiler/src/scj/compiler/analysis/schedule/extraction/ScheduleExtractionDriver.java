@@ -3,7 +3,6 @@ package scj.compiler.analysis.schedule.extraction;
 import com.ibm.wala.ssa.IR;
 import com.ibm.wala.ssa.SSACache;
 
-import scj.compiler.analysis.schedule.TaskSchedule;
 
 public class ScheduleExtractionDriver {
 	
@@ -17,7 +16,7 @@ public class ScheduleExtractionDriver {
 
 	public static TaskSchedule<Integer, WalaTaskScheduleManager> extractTaskSchedule(NormalNodeFlowData flowData, SSACache ssaCache, IR ir) {		
 		WalaTaskScheduleManager manager = WalaTaskScheduleManager.make(ssaCache, ir, flowData);
-		TaskSchedule<Integer, WalaTaskScheduleManager> taskSchedule = new TaskSchedule<Integer, WalaTaskScheduleManager>(manager);
+		TaskSchedule<Integer, WalaTaskScheduleManager> taskSchedule = new TaskSchedule<Integer, WalaTaskScheduleManager>(ir.getMethod().getName().toString(), manager);
 		return taskSchedule;
 	}
 	
