@@ -12,6 +12,7 @@ import scj.compiler.analysis.reachability.ReachabilityAnalysis;
 import scj.compiler.analysis.rw_sets.ParallelReadWriteSetsAnalysis;
 import scj.compiler.analysis.rw_sets.ReadWriteSetsAnalysis;
 import scj.compiler.analysis.schedule.ScheduleAnalysis;
+import scj.compiler.wala.util.TaskForestCallGraph;
 import scj.compiler.wala.util.WalaConstants;
 import sun.misc.Unsafe;
 
@@ -39,6 +40,7 @@ public class OptimizingCompilation extends CompilationDriver {
 
 	private AnalysisOptions walaOptions;
 	private CallGraph callGraph;
+	private TaskForestCallGraph taskForestCallGraph;
 	private PointerAnalysis pointerAnalysis;
 
 	private ScheduleAnalysis scheduleAnalysis;
@@ -136,8 +138,9 @@ public class OptimizingCompilation extends CompilationDriver {
 	
 	private IBytecodeMethod iMethod(CtMethod ctMethod, IClass iclass) {
 		String signature = ctMethod.getSignature();
-		Selector selector = Selector.make(signature);
+		Selector selector = Selector.make(ctMethod.getName() + signature);
 		IBytecodeMethod iMethod = (IBytecodeMethod)iclass.getMethod(selector);
+		//System.out.println(iMethod + "; name=" + ctMethod.getName() + "; signature=" + signature + "; selector=" + selector);
 		assert iMethod != null;
 		return iMethod;
 	}
@@ -196,26 +199,32 @@ public class OptimizingCompilation extends CompilationDriver {
 	}
 
 	public void runScheduleAnalysis() {
+		System.out.println("running schedule analysis");
 		getOrCreateScheduleAnalysis().analyze();
 	}
 
 	public void runEscapeAnalysis() {
+		System.out.println("running escape analysis");
 		getOrCreateEscapeAnalysis().analyze();
 	}
 	
 	public void runReachabilityAnalysis() {
+		System.out.println("running reachability analysis");
 		getOrCreateReachabilityAnalysis().analyze();
 	}
 	
 	public void runReadWriteSetsAnalysis() {
+		System.out.println("running read/write sets analysis");
 		getOrCreateReadWriteSetsAnalysis().analyze();
 	}
 	
 	public void runParallelReadWriteSetsAnalysis() {
+		System.out.println("running parallel read/write sets analysis");
 		getOrCreateParallelReadWriteSetsAnalysis().analyze();
 	}
 
 	public void runConflictingBytecodesAnalysis() {
+		System.out.println("running conflicting bytecodes analysis");
 		getOrCreateConflictingBytecodesAnalysis().analyze();
 	}
 	
@@ -279,6 +288,8 @@ public class OptimizingCompilation extends CompilationDriver {
 			throw new RuntimeException(e);
 		}
 		pointerAnalysis = builder.getPointerAnalysis();
+		
+		taskForestCallGraph = TaskForestCallGraph.make(callGraph, this.allTaskNodes());
 	}
 
 	public CallGraph callGraph() {
@@ -286,6 +297,9 @@ public class OptimizingCompilation extends CompilationDriver {
 		return this.callGraph;
 	}
 
+	public TaskForestCallGraph taskForestCallGraph() {
+		return this.taskForestCallGraph;
+	}
 	public PointerAnalysis pointerAnalysis() {
 		assert callGraph != null;
 		return pointerAnalysis;

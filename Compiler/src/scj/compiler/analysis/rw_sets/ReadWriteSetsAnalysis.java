@@ -40,6 +40,9 @@ public class ReadWriteSetsAnalysis {
 
 	private IField lookupField(FieldReference fieldRef) {
 		IClass clazz = compiler.classHierarchy().lookupClass(fieldRef.getDeclaringClass());
+		if(clazz == null) {			
+			throw new RuntimeException("didn't find IClass for name " + fieldRef.getDeclaringClass().toString());
+		}
 		return clazz.getField(fieldRef.getName());
 	}
 
@@ -48,8 +51,15 @@ public class ReadWriteSetsAnalysis {
 		
 		final PointerAnalysis pa = compiler.pointerAnalysis();
 		final HeapModel heap = pa.getHeapModel();
-		for(final CGNode node : compiler.callGraph()) {
+		
+		for(final CGNode node : compiler.taskForestCallGraph()) {
 			IR ir = node.getIR();
+			if(ir == null) {
+				assert node.getMethod().isNative();
+				System.err.println("Warning: could not compute read/write set of native node " + node);
+				break;
+			}
+			assert ir != null;
 			final ReadWriteSet readWriteSet = this.getOrCreateReadWriteSet(nodeReadWriteSets, node);			
 			ir.visitNormalInstructions(new Visitor() {
 

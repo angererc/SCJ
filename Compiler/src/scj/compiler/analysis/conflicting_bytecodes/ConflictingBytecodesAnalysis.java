@@ -52,8 +52,14 @@ public class ConflictingBytecodesAnalysis {
 		final PointerAnalysis pa = compiler.pointerAnalysis();
 		final HeapModel heap = pa.getHeapModel();
 
-		for(final CGNode node : compiler.callGraph()) {
+		for(final CGNode node : compiler.taskForestCallGraph()) {
 			IR ir = node.getIR();
+			IMethod iMethod = ir.getMethod();
+			if(! (iMethod instanceof IBytecodeMethod)) {
+				System.err.println("ConflictingBytecodesAnalysis: Cannot analyze method " + iMethod + "; not an instance of IBytecodeMethod.");
+				break;
+			}
+			
 			final IBytecodeMethod bcMethod = (IBytecodeMethod)ir.getMethod();
 
 			final ReadWriteSet parRWSet = parRWSetsAnalysis.nodeParallelReadWriteSet(node);
@@ -69,6 +75,9 @@ public class ConflictingBytecodesAnalysis {
 				}
 
 				SSAInstruction instruction = instructions[i];
+				if(instruction == null) 
+					break;
+				
 				instruction.visit(new Visitor() {
 
 					@Override
