@@ -197,7 +197,7 @@ public class OptimizingCompilation extends CompilationDriver {
 			}
 		}
 	}
-
+	
 	public void runScheduleAnalysis() {
 		System.out.println("running schedule analysis");
 		getOrCreateScheduleAnalysis().analyze();
@@ -207,17 +207,17 @@ public class OptimizingCompilation extends CompilationDriver {
 		System.out.println("running escape analysis");
 		getOrCreateEscapeAnalysis().analyze();
 	}
-	
+
 	public void runReachabilityAnalysis() {
 		System.out.println("running reachability analysis");
 		getOrCreateReachabilityAnalysis().analyze();
 	}
-	
+
 	public void runReadWriteSetsAnalysis() {
 		System.out.println("running read/write sets analysis");
 		getOrCreateReadWriteSetsAnalysis().analyze();
 	}
-	
+
 	public void runParallelReadWriteSetsAnalysis() {
 		System.out.println("running parallel read/write sets analysis");
 		getOrCreateParallelReadWriteSetsAnalysis().analyze();
@@ -227,7 +227,7 @@ public class OptimizingCompilation extends CompilationDriver {
 		System.out.println("running conflicting bytecodes analysis");
 		getOrCreateConflictingBytecodesAnalysis().analyze();
 	}
-	
+
 	public ScheduleAnalysis getOrCreateScheduleAnalysis() {
 		if(this.scheduleAnalysis == null) {
 			this.scheduleAnalysis = compilerOptions.createScheduleAnalysis(this);
@@ -241,32 +241,56 @@ public class OptimizingCompilation extends CompilationDriver {
 		}
 		return this.escapeAnalysis;
 	}
-	
+
 	public ReachabilityAnalysis getOrCreateReachabilityAnalysis() {
 		if(this.reachabilityAnalysis == null) {
 			reachabilityAnalysis = new ReachabilityAnalysis(this);
 		}
 		return this.reachabilityAnalysis;
 	}
-	
+
 	public ReadWriteSetsAnalysis getOrCreateReadWriteSetsAnalysis() {
 		if(this.rwSetsAnalysis == null) {
 			rwSetsAnalysis = new ReadWriteSetsAnalysis(this);
 		}
 		return this.rwSetsAnalysis;
 	}
-	
+
 	public ParallelReadWriteSetsAnalysis getOrCreateParallelReadWriteSetsAnalysis() {
 		if(this.parRWSetsAnalysis == null) {
 			this.parRWSetsAnalysis = new ParallelReadWriteSetsAnalysis(this);
 		}
 		return this.parRWSetsAnalysis;
 	}
-	
+
 	public ConflictingBytecodesAnalysis getOrCreateConflictingBytecodesAnalysis() {
 		if(this.conflictingBytecodesAnalysis == null) {
 			this.conflictingBytecodesAnalysis = new ConflictingBytecodesAnalysis(this);
 		}
+		return this.conflictingBytecodesAnalysis;
+	}
+	
+	public ScheduleAnalysis scheduleAnalysis() {		
+		return this.scheduleAnalysis;
+	}
+
+	public EscapeAnalysis escapeAnalysis() {		
+		return this.escapeAnalysis;
+	}
+	
+	public ReachabilityAnalysis reachabilityAnalysis() {
+		return this.reachabilityAnalysis;
+	}
+	
+	public ReadWriteSetsAnalysis readWriteSetsAnalysis() {
+		return this.rwSetsAnalysis;
+	}
+	
+	public ParallelReadWriteSetsAnalysis parallelReadWriteSetsAnalysis() {
+		return this.parRWSetsAnalysis;
+	}
+	
+	public ConflictingBytecodesAnalysis conflictingBytecodesAnalysis() {
 		return this.conflictingBytecodesAnalysis;
 	}
 

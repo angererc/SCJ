@@ -48,16 +48,21 @@ public class ConflictingBytecodesAnalysis {
 		parReadConflicts = new HashMap<IMethod, Set<Integer>>();
 		parWriteConflicts = new HashMap<IMethod, Set<Integer>>();
 
-		final ParallelReadWriteSetsAnalysis parRWSetsAnalysis = compiler.getOrCreateParallelReadWriteSetsAnalysis();
+		final ParallelReadWriteSetsAnalysis parRWSetsAnalysis = compiler.parallelReadWriteSetsAnalysis();
 		final PointerAnalysis pa = compiler.pointerAnalysis();
 		final HeapModel heap = pa.getHeapModel();
 
-		for(final CGNode node : compiler.taskForestCallGraph()) {
+		nodesLoop: for(final CGNode node : compiler.taskForestCallGraph()) {
 			IR ir = node.getIR();
+			if(ir == null) {
+				assert node.getMethod().isNative();
+				System.err.println("Warning: could not compute read/write set of native node " + node);
+				continue nodesLoop;
+			}
 			IMethod iMethod = ir.getMethod();
 			if(! (iMethod instanceof IBytecodeMethod)) {
 				System.err.println("ConflictingBytecodesAnalysis: Cannot analyze method " + iMethod + "; not an instance of IBytecodeMethod.");
-				break;
+				continue nodesLoop;
 			}
 			
 			final IBytecodeMethod bcMethod = (IBytecodeMethod)ir.getMethod();
@@ -65,7 +70,7 @@ public class ConflictingBytecodesAnalysis {
 			final ReadWriteSet parRWSet = parRWSetsAnalysis.nodeParallelReadWriteSet(node);
 
 			SSAInstruction[] instructions = ir.getInstructions();
-			for(int i = 0; i < instructions.length; i++) {
+			instructionsLoop: for(int i = 0; i < instructions.length; i++) {
 
 				final int bcIndex;
 				try {
@@ -76,7 +81,7 @@ public class ConflictingBytecodesAnalysis {
 
 				SSAInstruction instruction = instructions[i];
 				if(instruction == null) 
-					break;
+					continue instructionsLoop;
 				
 				instruction.visit(new Visitor() {
 

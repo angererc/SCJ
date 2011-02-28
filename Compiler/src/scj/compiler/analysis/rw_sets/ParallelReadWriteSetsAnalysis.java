@@ -33,9 +33,9 @@ public class ParallelReadWriteSetsAnalysis {
 	}
 
 	private void collectTaskParallelReadWriteSets() {
-		ReadWriteSetsAnalysis rwSetAnalysis = compiler.getOrCreateReadWriteSetsAnalysis();
-		EscapeAnalysis escapeAnalysis = compiler.getOrCreateEscapeAnalysis();
-		ScheduleAnalysis saAnalysis = compiler.getOrCreateScheduleAnalysis();
+		ReadWriteSetsAnalysis rwSetAnalysis = compiler.readWriteSetsAnalysis();
+		EscapeAnalysis escapeAnalysis = compiler.escapeAnalysis();
+		ScheduleAnalysis saAnalysis = compiler.scheduleAnalysis();
 		
 		parTaskReadWriteSets = new HashMap<CGNode, ReadWriteSet>();
 		
@@ -53,7 +53,7 @@ public class ParallelReadWriteSetsAnalysis {
 				}
 				
 				//writes
-				for(Entry<InstanceKey, Set<IField>> writeEntry : parTaskReadWriteSet.readEntries()) {					
+				for(Entry<InstanceKey, Set<IField>> writeEntry : parTaskReadWriteSet.writeEntries()) {					
 					if(escapeAnalysis.escapes(writeEntry.getKey())) {
 						result.addFieldWrites(writeEntry.getKey(), writeEntry.getValue());
 					}
@@ -65,11 +65,11 @@ public class ParallelReadWriteSetsAnalysis {
 	}
 	
 	private void collectNodeParallelReadWriteSets() {
-		ReachabilityAnalysis reachability = compiler.getOrCreateReachabilityAnalysis();
+		ReachabilityAnalysis reachability = compiler.reachabilityAnalysis();
 		
 		parNodeReadWriteSets = new HashMap<CGNode, ReadWriteSet>();
 		
-		for(CGNode node : compiler.callGraph()) {
+		for(CGNode node : compiler.taskForestCallGraph()) {
 			ReadWriteSet result = this.getOrCreateReadWriteSet(parNodeReadWriteSets, node);
 			
 			for(CGNode reachingTask : reachability.reachingTasks(node)) {

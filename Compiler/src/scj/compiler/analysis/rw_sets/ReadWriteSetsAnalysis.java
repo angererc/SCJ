@@ -52,12 +52,12 @@ public class ReadWriteSetsAnalysis {
 		final PointerAnalysis pa = compiler.pointerAnalysis();
 		final HeapModel heap = pa.getHeapModel();
 		
-		for(final CGNode node : compiler.taskForestCallGraph()) {
+		nodesLoop: for(final CGNode node : compiler.taskForestCallGraph()) {
 			IR ir = node.getIR();
 			if(ir == null) {
 				assert node.getMethod().isNative();
 				System.err.println("Warning: could not compute read/write set of native node " + node);
-				break;
+				continue nodesLoop;
 			}
 			assert ir != null;
 			final ReadWriteSet readWriteSet = this.getOrCreateReadWriteSet(nodeReadWriteSets, node);			
@@ -116,7 +116,7 @@ public class ReadWriteSetsAnalysis {
 	private void collectTaskReadWriteSets() {
 		taskReadWriteSets = new HashMap<CGNode, ReadWriteSet>();
 		
-		ReachabilityAnalysis reachability = compiler.getOrCreateReachabilityAnalysis();
+		ReachabilityAnalysis reachability = compiler.reachabilityAnalysis();
 		
 		for(CGNode taskNode : compiler.allTaskNodes()) {
 			ReadWriteSet taskReadWriteSet = this.getOrCreateReadWriteSet(taskReadWriteSets, taskNode);
