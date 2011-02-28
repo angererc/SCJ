@@ -1,6 +1,5 @@
 package scj.compiler.analysis.schedule;
 
-import java.util.HashSet;
 import java.util.Set;
 
 import scj.compiler.OptimizingCompilation;
@@ -43,16 +42,9 @@ public class DummyScheduleAnalysis implements ScheduleAnalysis {
 		return true;
 	}
 
-	private Set<CGNode> allNodes;
 	@Override
-	public Set<CGNode> parallelTaskFor(CGNode _) {
-		if(allNodes == null) {
-			allNodes = new HashSet<CGNode>();
-			for(CGNode node : compiler.callGraph()) {
-				allNodes.add(node);
-			}
-		}
-		return allNodes;
+	public Set<CGNode> parallelTasksFor(CGNode _) {
+		return compiler.allTaskNodes();		
 	}
 
 	@Override

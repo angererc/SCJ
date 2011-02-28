@@ -83,7 +83,7 @@ public class FullScheduleAnalysis implements ScheduleAnalysis {
 		return collapsedResult.isParallel(one, other);
 	}
 
-	public Set<CGNode> parallelTaskFor(CGNode node) {
+	public Set<CGNode> parallelTasksFor(CGNode node) {
 		return result.parallelTasksFor(node);
 	}
 	

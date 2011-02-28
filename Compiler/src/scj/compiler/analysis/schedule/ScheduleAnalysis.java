@@ -15,7 +15,7 @@ public interface ScheduleAnalysis {
 	public boolean isOrdered(IMethod one, IMethod other);
 	public boolean isParallel(IMethod one, IMethod other);
 
-	public Set<CGNode> parallelTaskFor(CGNode node);
+	public Set<CGNode> parallelTasksFor(CGNode node);
 	
 	public Set<IMethod> parallelTasksFor(IMethod method);
 }

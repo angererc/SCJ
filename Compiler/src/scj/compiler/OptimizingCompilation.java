@@ -7,6 +7,9 @@ import java.util.Iterator;
 import java.util.Set;
 
 import scj.compiler.analysis.escape.EscapeAnalysis;
+import scj.compiler.analysis.reachability.ReachabilityAnalysis;
+import scj.compiler.analysis.rw_sets.ParallelReadWriteSetsAnalysis;
+import scj.compiler.analysis.rw_sets.ReadWriteSetsAnalysis;
 import scj.compiler.analysis.schedule.ScheduleAnalysis;
 import scj.compiler.wala.util.WalaConstants;
 import sun.misc.Unsafe;
@@ -20,14 +23,19 @@ import javassist.expr.ExprEditor;
 import javassist.expr.FieldAccess;
 
 import com.ibm.wala.classLoader.IClass;
+import com.ibm.wala.classLoader.IField;
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.ipa.callgraph.AnalysisOptions;
+import com.ibm.wala.ipa.callgraph.CGNode;
 import com.ibm.wala.ipa.callgraph.CallGraph;
 import com.ibm.wala.ipa.callgraph.CallGraphBuilder;
+import com.ibm.wala.ipa.callgraph.propagation.HeapModel;
+import com.ibm.wala.ipa.callgraph.propagation.InstanceKey;
 import com.ibm.wala.ipa.callgraph.propagation.PointerAnalysis;
+import com.ibm.wala.ipa.callgraph.propagation.PointerKey;
 import com.ibm.wala.ipa.cha.ClassHierarchy;
 import com.ibm.wala.types.ClassLoaderReference;
-import com.ibm.wala.types.Selector;
+import com.ibm.wala.util.intset.OrdinalSet;
 
 public class OptimizingCompilation extends CompilationDriver {
 
@@ -37,10 +45,14 @@ public class OptimizingCompilation extends CompilationDriver {
 
 	private ScheduleAnalysis scheduleAnalysis;
 	private EscapeAnalysis escapeAnalysis;
-
+	private ReachabilityAnalysis reachabilityAnalysis;
+	private ReadWriteSetsAnalysis rwSetsAnalysis;
+	private ParallelReadWriteSetsAnalysis parRWSetsAnalysis;
+	
 	private HashSet<IMethod> taskMethods;
 	private HashSet<IMethod> mainTaskMethods;
-
+	private Set<CGNode> taskNodes; //lazily constructed
+	
 	private CtClass scjRuntimeClass;
 	private CodeConverter converter;
 
@@ -55,7 +67,9 @@ public class OptimizingCompilation extends CompilationDriver {
 
 		runScheduleAnalysis();
 		runEscapeAnalysis();
-
+		runReachabilityAnalysis();
+		runReadWriteSetsAnalysis();
+		runParallelReadWriteSetsAnalysis();
 	}
 
 	@Override
@@ -82,15 +96,7 @@ public class OptimizingCompilation extends CompilationDriver {
 
 	}
 
-	private IMethod iMethod(CtMethod ctMethod, IClass iclass) {
-		String signature = ctMethod.getSignature();
-		Selector selector = Selector.make(signature);
-		IMethod iMethod = iclass.getMethod(selector);
-		assert iMethod != null;
-		return iMethod;
-	}
-
-	private Field getField(Class<?> clazz, String fieldName) throws Exception {
+	private Field getField(Class<?> clazz, String fieldName) {
 		Field[] fields = clazz.getDeclaredFields();
 		for(int i = 0; i < fields.length; i++) {
 			Field f = fields[i];
@@ -102,8 +108,30 @@ public class OptimizingCompilation extends CompilationDriver {
 		if(superClazz != null) {
 			return getField(superClazz, fieldName);
 		} else {
-			throw new NoSuchFieldException(fieldName);
+			Exception e = new NoSuchFieldException(fieldName);
+			throw new RuntimeException(e);
 		}
+	}
+	
+	private long fieldIndex(Field field) {
+		long index;
+		Unsafe unsafe = scj.Runtime.unsafe;
+		if(Modifier.isStatic(field.getModifiers())) {
+			index = unsafe.staticFieldOffset(field);
+		} else {
+			index = unsafe.objectFieldOffset(field);
+		}	
+		return index;
+	}
+	
+	private Class<?> runtimeClassForName(String className) {
+		Class<?> runtimeClass;
+		try {
+			runtimeClass = Class.forName(className);
+		} catch (ClassNotFoundException e) {
+			throw new RuntimeException(e);
+		}
+		return runtimeClass;
 	}
 
 	@Override
@@ -117,7 +145,8 @@ public class OptimizingCompilation extends CompilationDriver {
 			}
 
 		}
-
+		
+		
 		//rewrite array accesses to call the Runtime array accessors
 		for(CtMethod ctMethod : ctclass.getDeclaredMethods()) {
 
@@ -132,26 +161,11 @@ public class OptimizingCompilation extends CompilationDriver {
 					String fieldName = f.getFieldName();
 					if(fieldsToProtect.contains(fieldName)) {
 						String fieldsClassName = f.getClassName();
-						Class<?> runtimeClass;
-						try {
-							runtimeClass = Class.forName(fieldsClassName);
-						} catch (ClassNotFoundException e) {
-							throw new RuntimeException(e);
-						}
+						Class<?> runtimeClass = runtimeClassForName(fieldsClassName);
 						assert runtimeClass != null;
-						long index;
-						try {
-							System.out.println("editing field access " + fieldName + " in class " + runtimeClass);
-							Field field = getField(runtimeClass, fieldName);
-							Unsafe unsafe = scj.Runtime.unsafe;
-							if(Modifier.isStatic(field.getModifiers())) {
-								index = unsafe.staticFieldOffset(field);
-							} else {
-								index = unsafe.objectFieldOffset(field);
-							}
-						} catch (Exception e) {
-							throw new RuntimeException(e);
-						}
+						Field field = getField(runtimeClass, fieldName);
+						System.out.println("editing field access " + fieldName + " in class " + runtimeClass);
+						long index = fieldIndex(field);						
 						System.out.println("Field " + fieldName + " has index " + index + " in class " + runtimeClass);
 						if(f.isReader()) {
 							//note: maybe I have to use unsafe.staticFieldBase(field) as the object to unsafe.put and unsafe.get
@@ -176,7 +190,19 @@ public class OptimizingCompilation extends CompilationDriver {
 	}
 
 	public void runEscapeAnalysis() {
-		getOrCreateEscapeAnalysis().run();
+		getOrCreateEscapeAnalysis().analyze();
+	}
+	
+	public void runReachabilityAnalysis() {
+		getOrCreateReachabilityAnalysis().analyze();
+	}
+	
+	public void runReadWriteSetsAnalysis() {
+		getOrCreateReadWriteSetsAnalysis().analyze();
+	}
+	
+	public void runParallelReadWriteSetsAnalysis() {
+		getOrCreateParallelReadWriteSetsAnalysis().analyze();
 	}
 
 	public ScheduleAnalysis getOrCreateScheduleAnalysis() {
@@ -191,6 +217,27 @@ public class OptimizingCompilation extends CompilationDriver {
 			this.escapeAnalysis = compilerOptions.createEscapeAnalysis(this);
 		}
 		return this.escapeAnalysis;
+	}
+	
+	public ReachabilityAnalysis getOrCreateReachabilityAnalysis() {
+		if(this.reachabilityAnalysis == null) {
+			reachabilityAnalysis = new ReachabilityAnalysis(this);
+		}
+		return this.reachabilityAnalysis;
+	}
+	
+	public ReadWriteSetsAnalysis getOrCreateReadWriteSetsAnalysis() {
+		if(this.rwSetsAnalysis == null) {
+			rwSetsAnalysis = new ReadWriteSetsAnalysis(this);
+		}
+		return this.rwSetsAnalysis;
+	}
+	
+	public ParallelReadWriteSetsAnalysis getOrCreateParallelReadWriteSetsAnalysis() {
+		if(this.parRWSetsAnalysis == null) {
+			this.parRWSetsAnalysis = new ParallelReadWriteSetsAnalysis(this);
+		}
+		return this.parRWSetsAnalysis;
 	}
 
 	@Override
@@ -225,6 +272,18 @@ public class OptimizingCompilation extends CompilationDriver {
 
 	public Set<IMethod> allTaskMethods() {
 		return this.taskMethods;
+	}
+	
+	public Set<CGNode> allTaskNodes() {
+		if(this.taskNodes != null) {
+			return this.taskNodes;
+		}
+		this.taskNodes = new HashSet<CGNode>();
+		CallGraph callGraph = this.callGraph();
+		for(IMethod taskMethod : this.allTaskMethods()) {
+			taskNodes.addAll(callGraph.getNodes(taskMethod.getReference()));
+		}
+		return taskNodes;
 	}
 
 	public Set<IMethod> mainTaskMethods() {

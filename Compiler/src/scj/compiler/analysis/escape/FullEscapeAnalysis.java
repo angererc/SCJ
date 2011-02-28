@@ -50,7 +50,7 @@ public class FullEscapeAnalysis implements EscapeAnalysis {
 	 * @throws IllegalArgumentException
 	 */
 	@Override
-	public void run() {
+	public void analyze() {
 		
 		ClassHierarchy classHierarchy = compiler.classHierarchy();
 		//
@@ -78,7 +78,7 @@ public class FullEscapeAnalysis implements EscapeAnalysis {
 			}
 		}
 
-		// 2) parameters flowing into task methods
+		// 2) parameters flowing into task methods.
 		for(IMethod taskMethod : compiler.allTaskMethods()) {
 			IR ir = compiler.irForMethod(taskMethod);
 			Set<CGNode> nodes = cg.getNodes(taskMethod.getReference());

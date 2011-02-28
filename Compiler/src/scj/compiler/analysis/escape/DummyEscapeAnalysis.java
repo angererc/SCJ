@@ -10,7 +10,7 @@ public class DummyEscapeAnalysis implements EscapeAnalysis {
 	}
 	
 	@Override
-	public void run() {
+	public void analyze() {
 		
 	}
 
