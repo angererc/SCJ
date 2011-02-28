@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import scj.compiler.analysis.conflicting_bytecodes.ConflictingBytecodesAnalysis;
 import scj.compiler.analysis.escape.EscapeAnalysis;
 import scj.compiler.analysis.reachability.ReachabilityAnalysis;
 import scj.compiler.analysis.rw_sets.ParallelReadWriteSetsAnalysis;
@@ -22,20 +23,17 @@ import javassist.CtMethod;
 import javassist.expr.ExprEditor;
 import javassist.expr.FieldAccess;
 
+import com.ibm.wala.classLoader.IBytecodeMethod;
 import com.ibm.wala.classLoader.IClass;
-import com.ibm.wala.classLoader.IField;
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.ipa.callgraph.AnalysisOptions;
 import com.ibm.wala.ipa.callgraph.CGNode;
 import com.ibm.wala.ipa.callgraph.CallGraph;
 import com.ibm.wala.ipa.callgraph.CallGraphBuilder;
-import com.ibm.wala.ipa.callgraph.propagation.HeapModel;
-import com.ibm.wala.ipa.callgraph.propagation.InstanceKey;
 import com.ibm.wala.ipa.callgraph.propagation.PointerAnalysis;
-import com.ibm.wala.ipa.callgraph.propagation.PointerKey;
 import com.ibm.wala.ipa.cha.ClassHierarchy;
 import com.ibm.wala.types.ClassLoaderReference;
-import com.ibm.wala.util.intset.OrdinalSet;
+import com.ibm.wala.types.Selector;
 
 public class OptimizingCompilation extends CompilationDriver {
 
@@ -48,6 +46,7 @@ public class OptimizingCompilation extends CompilationDriver {
 	private ReachabilityAnalysis reachabilityAnalysis;
 	private ReadWriteSetsAnalysis rwSetsAnalysis;
 	private ParallelReadWriteSetsAnalysis parRWSetsAnalysis;
+	private ConflictingBytecodesAnalysis conflictingBytecodesAnalysis;
 	
 	private HashSet<IMethod> taskMethods;
 	private HashSet<IMethod> mainTaskMethods;
@@ -70,6 +69,7 @@ public class OptimizingCompilation extends CompilationDriver {
 		runReachabilityAnalysis();
 		runReadWriteSetsAnalysis();
 		runParallelReadWriteSetsAnalysis();
+		runConflictingBytecodesAnalysis();
 	}
 
 	@Override
@@ -133,6 +133,14 @@ public class OptimizingCompilation extends CompilationDriver {
 		}
 		return runtimeClass;
 	}
+	
+	private IBytecodeMethod iMethod(CtMethod ctMethod, IClass iclass) {
+		String signature = ctMethod.getSignature();
+		Selector selector = Selector.make(signature);
+		IBytecodeMethod iMethod = (IBytecodeMethod)iclass.getMethod(selector);
+		assert iMethod != null;
+		return iMethod;
+	}
 
 	@Override
 	public void rewrite(IClass iclass, CtClass ctclass) throws Exception {
@@ -146,35 +154,37 @@ public class OptimizingCompilation extends CompilationDriver {
 
 		}
 		
-		
 		//rewrite array accesses to call the Runtime array accessors
 		for(CtMethod ctMethod : ctclass.getDeclaredMethods()) {
-
-			final Set<String> fieldsToProtect = new HashSet<String>();
-			fieldsToProtect.add("posx");
-
+			final IBytecodeMethod iMethod = iMethod(ctMethod, iclass);
+			
 			//
 			ctMethod.instrument(new ExprEditor() {
 
 				@Override
 				public void edit(FieldAccess f) throws CannotCompileException {
+					int bcIndex = f.indexOfBytecode();
+					
+					String fieldsClassName = f.getClassName();
+					Class<?> runtimeClass = runtimeClassForName(fieldsClassName);
+					assert runtimeClass != null;
+					
 					String fieldName = f.getFieldName();
-					if(fieldsToProtect.contains(fieldName)) {
-						String fieldsClassName = f.getClassName();
-						Class<?> runtimeClass = runtimeClassForName(fieldsClassName);
-						assert runtimeClass != null;
-						Field field = getField(runtimeClass, fieldName);
-						System.out.println("editing field access " + fieldName + " in class " + runtimeClass);
-						long index = fieldIndex(field);						
-						System.out.println("Field " + fieldName + " has index " + index + " in class " + runtimeClass);
-						if(f.isReader()) {
-							//note: maybe I have to use unsafe.staticFieldBase(field) as the object to unsafe.put and unsafe.get
+					Field field = getField(runtimeClass, fieldName);					
+					
+					if(f.isReader()) {
+						if(conflictingBytecodesAnalysis.hasParallelWriteConflict(iMethod, bcIndex)) {
+							System.out.println("editing field read " + fieldName + " in class " + runtimeClass);
+							long index = fieldIndex(field);						
+							System.out.println("Field " + fieldName + " has index " + index + " in class " + runtimeClass);
 							f.replace("$_ = scj.Runtime.getDoubleVolatile((Object)$0, " + index + "l);");
-						} else {
-							assert f.isWriter();
-							//f.replace("scj.Runtime.unsafe.putIntVolatile($0, 42, $1);");
 						}
-					}
+					} else {
+						assert f.isWriter();
+						if(conflictingBytecodesAnalysis.hasParallelReadConflict(iMethod, bcIndex) || conflictingBytecodesAnalysis.hasParallelWriteConflict(iMethod, bcIndex)) {
+							System.out.println("editing field write " + fieldName + " in class " + runtimeClass);
+						}
+					}					
 				}
 
 			});
@@ -205,6 +215,10 @@ public class OptimizingCompilation extends CompilationDriver {
 		getOrCreateParallelReadWriteSetsAnalysis().analyze();
 	}
 
+	public void runConflictingBytecodesAnalysis() {
+		getOrCreateConflictingBytecodesAnalysis().analyze();
+	}
+	
 	public ScheduleAnalysis getOrCreateScheduleAnalysis() {
 		if(this.scheduleAnalysis == null) {
 			this.scheduleAnalysis = compilerOptions.createScheduleAnalysis(this);
@@ -238,6 +252,13 @@ public class OptimizingCompilation extends CompilationDriver {
 			this.parRWSetsAnalysis = new ParallelReadWriteSetsAnalysis(this);
 		}
 		return this.parRWSetsAnalysis;
+	}
+	
+	public ConflictingBytecodesAnalysis getOrCreateConflictingBytecodesAnalysis() {
+		if(this.conflictingBytecodesAnalysis == null) {
+			this.conflictingBytecodesAnalysis = new ConflictingBytecodesAnalysis(this);
+		}
+		return this.conflictingBytecodesAnalysis;
 	}
 
 	@Override

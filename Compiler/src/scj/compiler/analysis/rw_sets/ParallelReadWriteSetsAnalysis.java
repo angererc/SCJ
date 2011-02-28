@@ -87,8 +87,8 @@ public class ParallelReadWriteSetsAnalysis {
 		return set;
 	}
 
-	public ReadWriteSet nodeParallelReadWriteSet(CGNode task) {
-		ReadWriteSet set = parTaskReadWriteSets.get(task);
+	public ReadWriteSet nodeParallelReadWriteSet(CGNode node) {
+		ReadWriteSet set = parTaskReadWriteSets.get(node);
 		return set == null ? ReadWriteSet.emptySet : set;
 	}
 	
