@@ -9,6 +9,7 @@ import java.util.Map.Entry;
 
 import com.ibm.wala.classLoader.IField;
 import com.ibm.wala.ipa.callgraph.propagation.InstanceKey;
+import com.ibm.wala.util.intset.OrdinalSet;
 
 public class ReadWriteSet {
 	private Map<InstanceKey, Set<IField>> fieldReads;
@@ -66,6 +67,54 @@ public class ReadWriteSet {
 			return fieldWrites.entrySet();
 		}		
 	}
+	
+	private boolean intersects(Set<IField> one, Set<IField> other) {
+		for(IField field : one) {
+			if(other.contains(field))
+				return true;
+		}
+		return false;
+	}
+	
+	private boolean intersects(Map<InstanceKey, Set<IField>> one, Map<InstanceKey, Set<IField>> other) {
+		for(Entry<InstanceKey, Set<IField>> oneEntry : one.entrySet()) {
+			Set<IField> otherSet = other.get(oneEntry.getKey());
+			if(otherSet != null) {
+				if (intersects(oneEntry.getValue(), otherSet)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+	
+	public boolean readReadConflict(ReadWriteSet other) {
+		if(fieldReads == null || other.fieldReads == null)
+			return false;
+		
+		return intersects(fieldReads, other.fieldReads);
+	}
+	
+	public boolean readWriteConflict(ReadWriteSet other) {
+		if(fieldReads == null || other.fieldWrites == null)
+			return false;
+		
+		return intersects(fieldReads, other.fieldWrites);
+	}
+	
+	public boolean writeReadConflict(ReadWriteSet other) {
+		if(fieldWrites == null || other.fieldReads == null)
+			return false;
+		
+		return intersects(fieldWrites, other.fieldReads);
+	}
+	
+	public boolean writeWriteConflict(ReadWriteSet other) {
+		if(fieldWrites == null || other.fieldWrites == null)
+			return false;
+		
+		return intersects(fieldWrites, other.fieldWrites);
+	}
 
 	void addAll(ReadWriteSet other) {
 		if(other.fieldReads != null) {
@@ -95,6 +144,12 @@ public class ReadWriteSet {
 		}
 		fields.addAll(fieldSet);
 	}
+	
+	void addFieldReads(OrdinalSet<InstanceKey> instances, IField field) {
+		for(InstanceKey instance : instances) {
+			this.addFieldRead(instance, field);
+		}
+	}
 
 	void addFieldWrites(InstanceKey instance, Set<IField> fieldSet) {
 		if(fieldWrites == null) {
@@ -109,6 +164,12 @@ public class ReadWriteSet {
 		fields.addAll(fieldSet);
 	}
 
+	void addFieldWrites(OrdinalSet<InstanceKey> instances, IField field) {
+		for(InstanceKey instance : instances) {
+			this.addFieldWrite(instance, field);
+		}
+	}
+	
 	void addFieldRead(InstanceKey instance, IField field) {
 		if(fieldReads == null) {
 			fieldReads = new HashMap<InstanceKey, Set<IField>>();

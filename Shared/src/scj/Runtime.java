@@ -43,23 +43,25 @@ public final class Runtime {
     }
 	public static final Unsafe unsafe = getUnsafe();
 
-    private static final int byteBase = unsafe.arrayBaseOffset(byte[].class);
-    private static final int charBase = unsafe.arrayBaseOffset(char[].class);
-    private static final int doubleBase = unsafe.arrayBaseOffset(double[].class);
-    private static final int floatBase = unsafe.arrayBaseOffset(float[].class);
-    private static final int intBase = unsafe.arrayBaseOffset(int[].class);
-    private static final int longBase = unsafe.arrayBaseOffset(long[].class);
-    private static final int objectBase = unsafe.arrayBaseOffset(Object[].class);
-    private static final int shortBase = unsafe.arrayBaseOffset(short[].class);
+	public static final int booleanBase = unsafe.arrayBaseOffset(boolean[].class);
+    public static final int byteBase = unsafe.arrayBaseOffset(byte[].class);
+    public static final int charBase = unsafe.arrayBaseOffset(char[].class);
+    public static final int doubleBase = unsafe.arrayBaseOffset(double[].class);
+    public static final int floatBase = unsafe.arrayBaseOffset(float[].class);
+    public static final int intBase = unsafe.arrayBaseOffset(int[].class);
+    public static final int longBase = unsafe.arrayBaseOffset(long[].class);
+    public static final int objectBase = unsafe.arrayBaseOffset(Object[].class);
+    public static final int shortBase = unsafe.arrayBaseOffset(short[].class);
     
-    private static final int byteScale = unsafe.arrayIndexScale(byte[].class);
-    private static final int charScale = unsafe.arrayIndexScale(char[].class);
-    private static final int doubleScale = unsafe.arrayIndexScale(double[].class);
-    private static final int floatScale = unsafe.arrayIndexScale(float[].class);
-    private static final int intScale = unsafe.arrayIndexScale(int[].class);
-    private static final int longScale = unsafe.arrayIndexScale(long[].class);
-    private static final int objectScale = unsafe.arrayIndexScale(Object[].class);
-    private static final int shortScale = unsafe.arrayIndexScale(short[].class);
+    public static final int booleanScale = unsafe.arrayIndexScale(boolean[].class);
+    public static final int byteScale = unsafe.arrayIndexScale(byte[].class);
+    public static final int charScale = unsafe.arrayIndexScale(char[].class);
+    public static final int doubleScale = unsafe.arrayIndexScale(double[].class);
+    public static final int floatScale = unsafe.arrayIndexScale(float[].class);
+    public static final int intScale = unsafe.arrayIndexScale(int[].class);
+    public static final int longScale = unsafe.arrayIndexScale(long[].class);
+    public static final int objectScale = unsafe.arrayIndexScale(Object[].class);
+    public static final int shortScale = unsafe.arrayIndexScale(short[].class);
     
     private static long rawIndex(int base, int scale, int i) {
         return base + (long) i * scale;
@@ -170,12 +172,6 @@ public final class Runtime {
 			
 		unsafe.putShortVolatile(array, rawIndex(shortBase, shortScale, i), newValue);
 	}
-
-	public static double getDoubleVolatile(Object obj, long index) {
-		
-		return unsafe.getDoubleVolatile(obj, index);
-	}
-
 	
 }
 

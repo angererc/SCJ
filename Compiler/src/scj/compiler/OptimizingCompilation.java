@@ -1,28 +1,24 @@
 package scj.compiler;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import scj.compiler.analysis.conflicting_bytecodes.ConflictingBytecodesAnalysis;
+import javassist.CtClass;
+import javassist.CtMethod;
+import javassist.Modifier;
 import scj.compiler.analysis.escape.EscapeAnalysis;
 import scj.compiler.analysis.reachability.ReachabilityAnalysis;
+import scj.compiler.analysis.rw_sets.BytecodeReadWriteSetsAnalysis;
 import scj.compiler.analysis.rw_sets.ParallelReadWriteSetsAnalysis;
+import scj.compiler.analysis.rw_sets.ReadWriteConflictDetector;
+import scj.compiler.analysis.rw_sets.ReadWriteSet;
 import scj.compiler.analysis.rw_sets.ReadWriteSetsAnalysis;
 import scj.compiler.analysis.schedule.ScheduleAnalysis;
+import scj.compiler.optimizing.CompilationStats;
+import scj.compiler.optimizing.OptimizingUtil;
 import scj.compiler.wala.util.TaskForestCallGraph;
 import scj.compiler.wala.util.WalaConstants;
-import sun.misc.Unsafe;
-
-import javassist.CannotCompileException;
-import javassist.CodeConverter;
-import javassist.CtClass;
-import javassist.CtField;
-import javassist.CtMethod;
-import javassist.expr.ExprEditor;
-import javassist.expr.FieldAccess;
 
 import com.ibm.wala.classLoader.IBytecodeMethod;
 import com.ibm.wala.classLoader.IClass;
@@ -34,13 +30,14 @@ import com.ibm.wala.ipa.callgraph.CallGraphBuilder;
 import com.ibm.wala.ipa.callgraph.propagation.PointerAnalysis;
 import com.ibm.wala.ipa.cha.ClassHierarchy;
 import com.ibm.wala.types.ClassLoaderReference;
-import com.ibm.wala.types.Selector;
 
-public class OptimizingCompilation extends CompilationDriver {
+public class OptimizingCompilation extends CompilationDriver implements ReadWriteConflictDetector {
 
 	private AnalysisOptions walaOptions;
 	private CallGraph callGraph;
 	private TaskForestCallGraph taskForestCallGraph;
+	private Set<CGNode> taskForestCallGraphNodes; //lazily computed
+	private Set<IMethod> taskForestMethods; //lazy
 	private PointerAnalysis pointerAnalysis;
 
 	private ScheduleAnalysis scheduleAnalysis;
@@ -48,14 +45,13 @@ public class OptimizingCompilation extends CompilationDriver {
 	private ReachabilityAnalysis reachabilityAnalysis;
 	private ReadWriteSetsAnalysis rwSetsAnalysis;
 	private ParallelReadWriteSetsAnalysis parRWSetsAnalysis;
-	private ConflictingBytecodesAnalysis conflictingBytecodesAnalysis;
-	
+	private BytecodeReadWriteSetsAnalysis bytecodeRWSetsAnalysis;
+
 	private HashSet<IMethod> taskMethods;
 	private HashSet<IMethod> mainTaskMethods;
 	private Set<CGNode> taskNodes; //lazily constructed
+	private CompilationStats compilationStats;
 	
-	private CtClass scjRuntimeClass;
-	private CodeConverter converter;
 
 	protected OptimizingCompilation(CompilerOptions opts) {
 		super(opts);
@@ -71,7 +67,7 @@ public class OptimizingCompilation extends CompilationDriver {
 		runReachabilityAnalysis();
 		runReadWriteSetsAnalysis();
 		runParallelReadWriteSetsAnalysis();
-		runConflictingBytecodesAnalysis();
+		runBytecodeReadWriteSetsAnalysis();
 	}
 
 	@Override
@@ -88,116 +84,117 @@ public class OptimizingCompilation extends CompilationDriver {
 		}
 		return result.toString();
 	}
-
+	
 	@Override
 	public void prepareEmitCode() throws Exception {
-		scjRuntimeClass = classPool.get("scj.Runtime");
-
-		converter = new CodeConverter();
-		converter.replaceArrayAccess(scjRuntimeClass, new CodeConverter.DefaultArrayAccessReplacementMethodNames());
-
-	}
-
-	private Field getField(Class<?> clazz, String fieldName) {
-		Field[] fields = clazz.getDeclaredFields();
-		for(int i = 0; i < fields.length; i++) {
-			Field f = fields[i];
-			if(f.getName().equals(fieldName))
-				return f;
-		}
+		this.compilationStats = new CompilationStats();
 		
-		Class<?> superClazz = clazz.getSuperclass();
-		if(superClazz != null) {
-			return getField(superClazz, fieldName);
-		} else {
-			Exception e = new NoSuchFieldException(fieldName);
-			throw new RuntimeException(e);
-		}
-	}
-	
-	private long fieldIndex(Field field) {
-		long index;
-		Unsafe unsafe = scj.Runtime.unsafe;
-		if(Modifier.isStatic(field.getModifiers())) {
-			index = unsafe.staticFieldOffset(field);
-		} else {
-			index = unsafe.objectFieldOffset(field);
-		}	
-		return index;
-	}
-	
-	private Class<?> runtimeClassForName(String className) {
-		Class<?> runtimeClass;
-		try {
-			runtimeClass = Class.forName(className);
-		} catch (ClassNotFoundException e) {
-			throw new RuntimeException(e);
-		}
-		return runtimeClass;
-	}
-	
-	private IBytecodeMethod iMethod(CtMethod ctMethod, IClass iclass) {
-		String signature = ctMethod.getSignature();
-		Selector selector = Selector.make(ctMethod.getName() + signature);
-		IBytecodeMethod iMethod = (IBytecodeMethod)iclass.getMethod(selector);
-		//System.out.println(iMethod + "; name=" + ctMethod.getName() + "; signature=" + signature + "; selector=" + selector);
-		assert iMethod != null;
-		return iMethod;
+		//make sure those are computed
+		this.taskForestCallGraphNodes();
+		this.taskForestMethods();
 	}
 
 	@Override
-	public void rewrite(IClass iclass, CtClass ctclass) throws Exception {
-		//change all fields to not be volatile
-		for(CtField field : ctclass.getDeclaredFields()) {
-			int mods = field.getModifiers();
-			if(Modifier.isVolatile(mods)) {
-				int newMods = mods & ~Modifier.VOLATILE;				
-				field.setModifiers(newMods);
-			}
+	public void cleanupEmitCode() {
+		compilationStats.printStats();
+	}
 
+	
+	/* (non-Javadoc)
+	 * @see scj.compiler.ReadWriteConflictDetector#readReadConflict(com.ibm.wala.classLoader.IMethod, java.lang.Integer)
+	 */
+	public boolean readReadConflict(IMethod method, Integer bytecode) {
+		Set<CGNode> methodNodes = callGraph.getNodes(method.getReference());
+		for(CGNode methodNode : methodNodes) {
+			assert methodNode.getMethod().isNative()
+			|| methodNode.getMethod().isSynthetic()
+			|| bytecodeRWSetsAnalysis.containsReadWriteSet(methodNode, bytecode) : "Bytecode R/W sets analysis doesn't contain set for bytecode " + bytecode + " in node " + methodNode;
+			ReadWriteSet rwSet = bytecodeRWSetsAnalysis.readWriteSet(methodNode, bytecode);
+			ReadWriteSet parRWSet = parRWSetsAnalysis.nodeParallelReadWriteSet(methodNode);
+			if(rwSet.readReadConflict(parRWSet))
+				return true;
 		}
-		
-		//rewrite array accesses to call the Runtime array accessors
-		for(CtMethod ctMethod : ctclass.getDeclaredMethods()) {
-			final IBytecodeMethod iMethod = iMethod(ctMethod, iclass);
-			
-			//
-			ctMethod.instrument(new ExprEditor() {
-
-				@Override
-				public void edit(FieldAccess f) throws CannotCompileException {
-					int bcIndex = f.indexOfBytecode();
-					
-					String fieldsClassName = f.getClassName();
-					Class<?> runtimeClass = runtimeClassForName(fieldsClassName);
-					assert runtimeClass != null;
-					
-					String fieldName = f.getFieldName();
-					Field field = getField(runtimeClass, fieldName);					
-					
-					if(f.isReader()) {
-						if(conflictingBytecodesAnalysis.hasParallelWriteConflict(iMethod, bcIndex)) {
-							System.out.println("editing field read " + fieldName + " in class " + runtimeClass);
-							long index = fieldIndex(field);						
-							System.out.println("Field " + fieldName + " has index " + index + " in class " + runtimeClass);
-							f.replace("$_ = scj.Runtime.getDoubleVolatile((Object)$0, " + index + "l);");
-						}
-					} else {
-						assert f.isWriter();
-						if(conflictingBytecodesAnalysis.hasParallelReadConflict(iMethod, bcIndex) || conflictingBytecodesAnalysis.hasParallelWriteConflict(iMethod, bcIndex)) {
-							System.out.println("editing field write " + fieldName + " in class " + runtimeClass);
-						}
-					}					
-				}
-
-			});
-
-			if(ctclass.getName().startsWith("testclasses")) {
-				ctMethod.instrument(converter);
-			}
-		}
+		return false;
 	}
 	
+	/* (non-Javadoc)
+	 * @see scj.compiler.ReadWriteConflictDetector#readWriteConflict(com.ibm.wala.classLoader.IMethod, java.lang.Integer)
+	 */
+	public boolean readWriteConflict(IMethod method, Integer bytecode) {
+		Set<CGNode> methodNodes = callGraph.getNodes(method.getReference());
+		for(CGNode methodNode : methodNodes) {
+			assert methodNode.getMethod().isNative()
+			|| methodNode.getMethod().isSynthetic()
+			|| bytecodeRWSetsAnalysis.containsReadWriteSet(methodNode, bytecode) : "Bytecode R/W sets analysis doesn't contain set for bytecode " + bytecode + " in node " + methodNode;
+			ReadWriteSet rwSet = bytecodeRWSetsAnalysis.readWriteSet(methodNode, bytecode);
+			ReadWriteSet parRWSet = parRWSetsAnalysis.nodeParallelReadWriteSet(methodNode);
+			if(rwSet.readWriteConflict(parRWSet))
+				return true;
+		}
+		return false;
+	}
+	
+	/* (non-Javadoc)
+	 * @see scj.compiler.ReadWriteConflictDetector#writeReadConflict(com.ibm.wala.classLoader.IMethod, java.lang.Integer)
+	 */
+	public boolean writeReadConflict(IMethod method, Integer bytecode) {
+		Set<CGNode> methodNodes = callGraph.getNodes(method.getReference());
+		for(CGNode methodNode : methodNodes) {
+			assert methodNode.getMethod().isNative()
+			|| methodNode.getMethod().isSynthetic() 
+			|| bytecodeRWSetsAnalysis.containsReadWriteSet(methodNode, bytecode) : "Bytecode R/W sets analysis doesn't contain set for bytecode " + bytecode + " in node " + methodNode;
+			ReadWriteSet rwSet = bytecodeRWSetsAnalysis.readWriteSet(methodNode, bytecode);
+			ReadWriteSet parRWSet = parRWSetsAnalysis.nodeParallelReadWriteSet(methodNode);
+			if(rwSet.writeReadConflict(parRWSet))
+				return true;
+		}
+		return false;
+	}
+	
+	/* (non-Javadoc)
+	 * @see scj.compiler.ReadWriteConflictDetector#writeWriteConflict(com.ibm.wala.classLoader.IMethod, java.lang.Integer)
+	 */
+	public boolean writeWriteConflict(IMethod method, Integer bytecode) {
+		Set<CGNode> methodNodes = callGraph.getNodes(method.getReference());
+		for(CGNode methodNode : methodNodes) {
+			assert methodNode.getMethod().isNative()
+			|| methodNode.getMethod().isSynthetic()
+			|| bytecodeRWSetsAnalysis.containsReadWriteSet(methodNode, bytecode) : "Bytecode R/W sets analysis doesn't contain set for bytecode " + bytecode + " in node " + methodNode;
+			ReadWriteSet rwSet = bytecodeRWSetsAnalysis.readWriteSet(methodNode, bytecode);
+			ReadWriteSet parRWSet = parRWSetsAnalysis.nodeParallelReadWriteSet(methodNode);
+			if(rwSet.writeWriteConflict(parRWSet))
+				return true;
+		}
+		return false;
+	}
+	
+	@Override
+	public void rewrite(IClass iclass, CtClass ctclass) throws Exception {
+		
+		OptimizingUtil.markAllNonStaticFieldsNotVolatileAndStaticFieldsVolatile(ctclass);
+
+		//rewrite array accesses to call the Runtime array accessors
+		for(CtMethod ctMethod : ctclass.getDeclaredMethods()) {
+			final IBytecodeMethod bcMethod = OptimizingUtil.ctMethodToIBytecodeMethod(ctMethod, iclass);
+			
+			if(taskForestMethods.contains(bcMethod)) {
+				//reachable method				
+				OptimizingUtil.makeConflictingFieldAccessesVolatile(this, compilationStats, ctMethod, bcMethod);
+				OptimizingUtil.makeAllArrayAccessesVolatile(ctMethod);
+			} else {				
+				//method should be unreachable
+				int mods = ctMethod.getModifiers();
+				if(Modifier.isNative(mods) || Modifier.isAbstract(mods)) {
+					continue;
+				}
+				ctMethod.insertBefore("System.err.println(\"Warning: Method " + ctMethod.getName() + " was called even though it was considered unreachable by the analysis\");");
+				OptimizingUtil.makeAllArrayAccessesVolatile(ctMethod);
+				OptimizingUtil.makeAllFieldAccessesVolatile(compilationStats, ctMethod);
+			}
+
+		}
+	}
+
 	public void runScheduleAnalysis() {
 		System.out.println("running schedule analysis");
 		getOrCreateScheduleAnalysis().analyze();
@@ -223,9 +220,9 @@ public class OptimizingCompilation extends CompilationDriver {
 		getOrCreateParallelReadWriteSetsAnalysis().analyze();
 	}
 
-	public void runConflictingBytecodesAnalysis() {
-		System.out.println("running conflicting bytecodes analysis");
-		getOrCreateConflictingBytecodesAnalysis().analyze();
+	public void runBytecodeReadWriteSetsAnalysis() {
+		System.out.println("running bytecode read/write sets analysis");
+		getOrCreateBytecodeReadWriteSetsAnalysis().analyze();
 	}
 
 	public ScheduleAnalysis getOrCreateScheduleAnalysis() {
@@ -263,13 +260,13 @@ public class OptimizingCompilation extends CompilationDriver {
 		return this.parRWSetsAnalysis;
 	}
 
-	public ConflictingBytecodesAnalysis getOrCreateConflictingBytecodesAnalysis() {
-		if(this.conflictingBytecodesAnalysis == null) {
-			this.conflictingBytecodesAnalysis = new ConflictingBytecodesAnalysis(this);
+	public BytecodeReadWriteSetsAnalysis getOrCreateBytecodeReadWriteSetsAnalysis() {
+		if(this.bytecodeRWSetsAnalysis == null) {
+			this.bytecodeRWSetsAnalysis = new BytecodeReadWriteSetsAnalysis(this);
 		}
-		return this.conflictingBytecodesAnalysis;
+		return this.bytecodeRWSetsAnalysis;
 	}
-	
+
 	public ScheduleAnalysis scheduleAnalysis() {		
 		return this.scheduleAnalysis;
 	}
@@ -277,21 +274,21 @@ public class OptimizingCompilation extends CompilationDriver {
 	public EscapeAnalysis escapeAnalysis() {		
 		return this.escapeAnalysis;
 	}
-	
+
 	public ReachabilityAnalysis reachabilityAnalysis() {
 		return this.reachabilityAnalysis;
 	}
-	
+
 	public ReadWriteSetsAnalysis readWriteSetsAnalysis() {
 		return this.rwSetsAnalysis;
 	}
-	
+
 	public ParallelReadWriteSetsAnalysis parallelReadWriteSetsAnalysis() {
 		return this.parRWSetsAnalysis;
 	}
-	
-	public ConflictingBytecodesAnalysis conflictingBytecodesAnalysis() {
-		return this.conflictingBytecodesAnalysis;
+
+	public BytecodeReadWriteSetsAnalysis conflictingBytecodeReadWriteSetsAnalysis() {
+		return this.bytecodeRWSetsAnalysis;
 	}
 
 	@Override
@@ -312,7 +309,7 @@ public class OptimizingCompilation extends CompilationDriver {
 			throw new RuntimeException(e);
 		}
 		pointerAnalysis = builder.getPointerAnalysis();
-		
+
 		taskForestCallGraph = TaskForestCallGraph.make(callGraph, this.allTaskNodes());
 	}
 
@@ -324,6 +321,30 @@ public class OptimizingCompilation extends CompilationDriver {
 	public TaskForestCallGraph taskForestCallGraph() {
 		return this.taskForestCallGraph;
 	}
+		
+	public Set<CGNode> taskForestCallGraphNodes() {
+		if(taskForestCallGraphNodes != null)
+			return taskForestCallGraphNodes;
+		
+		taskForestCallGraphNodes = new HashSet<CGNode>();
+		for(CGNode node : taskForestCallGraph) {
+			taskForestCallGraphNodes.add(node);
+		}
+		return taskForestCallGraphNodes;
+	}
+	
+	public Set<IMethod> taskForestMethods() {
+		if(this.taskForestMethods != null)
+			return this.taskForestMethods;
+		
+		taskForestMethods = new HashSet<IMethod>();
+		for(CGNode node : this.taskForestCallGraphNodes()) {
+			taskForestMethods.add(node.getMethod());
+		}
+		return taskForestMethods;
+	}
+
+	
 	public PointerAnalysis pointerAnalysis() {
 		assert callGraph != null;
 		return pointerAnalysis;
@@ -332,7 +353,7 @@ public class OptimizingCompilation extends CompilationDriver {
 	public Set<IMethod> allTaskMethods() {
 		return this.taskMethods;
 	}
-	
+
 	public Set<CGNode> allTaskNodes() {
 		if(this.taskNodes != null) {
 			return this.taskNodes;

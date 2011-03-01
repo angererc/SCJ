@@ -1,18 +1,15 @@
 package scj.compiler;
 
-import java.lang.reflect.Modifier;
+import scj.compiler.optimizing.CompilationStats;
+import scj.compiler.optimizing.OptimizingUtil;
 
-import javassist.CodeConverter;
 import javassist.CtClass;
-import javassist.CtField;
-import javassist.CtMethod;
 
 import com.ibm.wala.classLoader.IClass;
 
 public class SequentiallyConsistentCompilation extends ScheduleSitesOnlyCompilation {
 
-	private CtClass scjRuntimeClass;
-	private CodeConverter converter;
+	private CompilationStats stats;
 	
 	public SequentiallyConsistentCompilation(CompilerOptions opts) {
 		super(opts);
@@ -25,11 +22,12 @@ public class SequentiallyConsistentCompilation extends ScheduleSitesOnlyCompilat
 	
 	@Override
 	public void prepareEmitCode() throws Exception {
-		scjRuntimeClass = classPool.get("scj.Runtime");
-		
-		converter = new CodeConverter();
-		converter.replaceArrayAccess(scjRuntimeClass, new CodeConverter.DefaultArrayAccessReplacementMethodNames());
-		
+		stats = new CompilationStats();
+	}
+	
+	@Override
+	public void cleanupEmitCode() {
+		stats.printStats();
 	}
 
 	@Override
@@ -37,21 +35,9 @@ public class SequentiallyConsistentCompilation extends ScheduleSitesOnlyCompilat
 		//rewrite schedule sites
 		super.rewrite(iclass, ctclass);
 
-		//change all fields to volatile
-		for(CtField field : ctclass.getDeclaredFields()) {
-			int mods = field.getModifiers();
-			if(! Modifier.isVolatile(mods)) {
-				int newMods = mods | Modifier.VOLATILE;				
-				field.setModifiers(newMods);
-			}
-			
-		}
-		
-		//rewrite array accesses to call the Runtime array accessors
-		for(CtMethod method : ctclass.getDeclaredMethods()) {
-				method.instrument(converter);
-		}
-		
+		OptimizingUtil.markAllFieldsVolatile(ctclass);
+		OptimizingUtil.makeAllArrayAccessesVolatile(ctclass);
+		OptimizingUtil.makeAllFieldAccessesVolatile(stats, ctclass);
 	}
 
 	@Override
