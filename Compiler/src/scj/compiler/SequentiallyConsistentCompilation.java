@@ -27,6 +27,7 @@ public class SequentiallyConsistentCompilation extends ScheduleSitesOnlyCompilat
 	
 	@Override
 	public void cleanupEmitCode() {
+		System.out.println("");
 		stats.printStats();
 	}
 

@@ -96,6 +96,7 @@ public class OptimizingCompilation extends CompilationDriver implements ReadWrit
 
 	@Override
 	public void cleanupEmitCode() {
+		System.out.println("");
 		compilationStats.printStats();
 	}
 
@@ -173,8 +174,16 @@ public class OptimizingCompilation extends CompilationDriver implements ReadWrit
 		
 		OptimizingUtil.markAllNonStaticFieldsNotVolatileAndStaticFieldsVolatile(ctclass);
 
+		System.err.println("Warning: OptimizingCompilation.rewrite() must rewrite code of the constructors, too!!!");
 		//rewrite array accesses to call the Runtime array accessors
 		for(CtMethod ctMethod : ctclass.getDeclaredMethods()) {
+			String mName = ctMethod.getLongName();
+			
+			if(mName.startsWith("java.lang")) { //have to exclude the whole java.lang package; not sure why I can't just exclude the required classes; I don't find all of them i guess
+				System.err.println("OptimizingUtil: ignoring system method " + mName);
+				continue;
+			}
+			
 			final IBytecodeMethod bcMethod = OptimizingUtil.ctMethodToIBytecodeMethod(ctMethod, iclass);
 			
 			if(taskForestMethods.contains(bcMethod)) {
@@ -186,7 +195,8 @@ public class OptimizingCompilation extends CompilationDriver implements ReadWrit
 				if(Modifier.isNative(mods) || Modifier.isAbstract(mods)) {
 					continue;
 				}
-				ctMethod.insertBefore("System.err.println(\"Warning: Method " + ctMethod.getName() + " was called even though it was considered unreachable by the analysis\");");
+				
+				ctMethod.insertBefore("System.err.println(\"Warning: Method " + mName + " was called even though it was considered unreachable by the analysis\");");
 				OptimizingUtil.makeAllArrayAccessesVolatile(ctMethod);
 				OptimizingUtil.makeAllFieldAccessesVolatile(compilationStats, ctMethod);
 			}

@@ -130,6 +130,7 @@ public class OptimizingUtil {
 		//therefore we first collect a list for each field access without modifying the code. The theory is that the ordering of the field accesses doesn't change
 		//and then the bytecode indices aren't important any more
 		//another solution would be to edit the javassist body backwards but I didn't find an easy way to do that...
+		
 		CollectConflictingFieldAndArrayAccessesEditor collector = new CollectConflictingFieldAndArrayAccessesEditor(conflicts, bcMethod);
 		ctMethod.instrument(collector);
 		
