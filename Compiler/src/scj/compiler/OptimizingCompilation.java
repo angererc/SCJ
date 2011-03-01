@@ -179,8 +179,7 @@ public class OptimizingCompilation extends CompilationDriver implements ReadWrit
 			
 			if(taskForestMethods.contains(bcMethod)) {
 				//reachable method				
-				OptimizingUtil.makeConflictingFieldAccessesVolatile(this, compilationStats, ctMethod, bcMethod);
-				OptimizingUtil.makeAllArrayAccessesVolatile(ctMethod);
+				OptimizingUtil.makeConflictingFieldAndArrayAccessesVolatile(this, compilationStats, ctMethod, bcMethod);				
 			} else {				
 				//method should be unreachable
 				int mods = ctMethod.getModifiers();

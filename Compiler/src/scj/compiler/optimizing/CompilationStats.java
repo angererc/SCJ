@@ -24,4 +24,15 @@ public class CompilationStats {
 		
 	}
 
+	public void recordUninstrumentedArrayAccess(int pos, int c,
+			String methodName) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void recordInstrumentedArrayAccess(int pos, int c, String methodName) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

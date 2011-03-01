@@ -2,6 +2,7 @@ package scj.compiler.optimizing;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 
 import scj.compiler.analysis.rw_sets.ReadWriteConflictDetector;
 import sun.misc.Unsafe;
@@ -65,6 +66,15 @@ public class OptimizingUtil {
 		return converter;
 	}
 	
+	private static CodeConverter conflictingArrayAccessReplacementConverter(CompilationStats stats, ClassPool classPool, ArrayList<Boolean> arrayAccessesNeedingVolatile) throws NotFoundException {
+		CtClass scjRuntimeClass = classPool.get("scj.Runtime");
+		
+		ConflictingVolatileArraysCodeConverter converter = new ConflictingVolatileArraysCodeConverter();
+		converter.replaceVolatileArrayAccess(stats, arrayAccessesNeedingVolatile, scjRuntimeClass, new CodeConverter.DefaultArrayAccessReplacementMethodNames());
+		
+		return converter;
+	}
+	
 	public static void makeAllArrayAccessesVolatile(CtMethod method) throws NotFoundException, CannotCompileException {
 		CodeConverter converter = arrayAccessReplacementConverter(method.getDeclaringClass().getClassPool());
 		method.instrument(converter);
@@ -78,15 +88,15 @@ public class OptimizingUtil {
 		}
 	}
 	
-	public static void makeAllFieldAccessesVolatile(CompilationStats stats, CtClass ctclass) throws CannotCompileException {
+	public static void makeAllFieldAccessesVolatile(CompilationStats stats, CtClass ctclass) throws CannotCompileException, NotFoundException {
 		for(CtMethod method : ctclass.getDeclaredMethods()) {
 			makeAllFieldAccessesVolatile(stats, method);
 		}
 	}
 
-	public static void makeAllFieldAccessesVolatile(CompilationStats stats, CtMethod ctMethod) throws CannotCompileException {
+	public static void makeAllFieldAccessesVolatile(CompilationStats stats, CtMethod ctMethod) throws CannotCompileException, NotFoundException {
 		//we know that bc is only used in calls to the conflict detector which is unused when rewriting all accesses; so we can just pass null
-		makeConflictingFieldAccessesVolatile(
+		makeConflictingFieldAndArrayAccessesVolatile(
 				new ReadWriteConflictDetector() {
 
 					@Override
@@ -113,20 +123,24 @@ public class OptimizingUtil {
 		);
 	}
 	
-	public static void makeConflictingFieldAccessesVolatile(ReadWriteConflictDetector conflicts, CompilationStats stats, CtMethod ctMethod, IBytecodeMethod bcMethod) throws CannotCompileException {
+	public static void makeConflictingFieldAndArrayAccessesVolatile(ReadWriteConflictDetector conflicts, CompilationStats stats, CtMethod ctMethod, IBytecodeMethod bcMethod) throws CannotCompileException, NotFoundException {
 		//we can only map wala ssa instructions to javassist bytecodes through the bytecode index. However,
 		//when we replace a field access with a call to unsafe, the bytecode indices change and subsequent javassist bytecodes don't match up with the wala
 		//counterparts any more
 		//therefore we first collect a list for each field access without modifying the code. The theory is that the ordering of the field accesses doesn't change
 		//and then the bytecode indices aren't important any more
 		//another solution would be to edit the javassist body backwards but I didn't find an easy way to do that...
-		CollectVolatileFieldAccessesEditor collector = new CollectVolatileFieldAccessesEditor(conflicts, bcMethod);
+		CollectConflictingFieldAndArrayAccessesEditor collector = new CollectConflictingFieldAndArrayAccessesEditor(conflicts, bcMethod);
 		ctMethod.instrument(collector);
 		
-		VolatileFieldAccessesEditor editor = new VolatileFieldAccessesEditor(collector.fieldAccessNeedsVolatile, stats);		
+		ConflictingVolatileFieldAccessesEditor editor = new ConflictingVolatileFieldAccessesEditor(collector.fieldAccessesNeedingVolatile, stats);		
 		ctMethod.instrument(editor);
 		
-		assert collector.fieldAccessNeedsVolatile.size() == 0 : "not all field accesses have been seen?!?";
+		CodeConverter converter = conflictingArrayAccessReplacementConverter(stats, ctMethod.getDeclaringClass().getClassPool(), collector.arrayAccessesNeedingVolatile);
+		ctMethod.instrument(converter);
+		
+		assert collector.fieldAccessesNeedingVolatile.size() == 0 : "not all field accesses have been seen?!?";
+		assert collector.arrayAccessesNeedingVolatile.size() == 0 : "not all array accesses have been seen?!?";
 	}
 	
 	public static Class<?> runtimeClassForName(String className) {

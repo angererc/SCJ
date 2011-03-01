@@ -10,12 +10,12 @@ import javassist.NotFoundException;
 import javassist.expr.ExprEditor;
 import javassist.expr.FieldAccess;
 
-public class VolatileFieldAccessesEditor extends ExprEditor {
+public class ConflictingVolatileFieldAccessesEditor extends ExprEditor {
 
 	private final ArrayList<Boolean> volatileFieldAccesses;
 	private final CompilationStats stats;
 	
-	VolatileFieldAccessesEditor(ArrayList<Boolean> volatileFieldAccesses, CompilationStats stats) {
+	ConflictingVolatileFieldAccessesEditor(ArrayList<Boolean> volatileFieldAccesses, CompilationStats stats) {
 		this.volatileFieldAccesses = volatileFieldAccesses;
 		this.stats = stats;
 	}
