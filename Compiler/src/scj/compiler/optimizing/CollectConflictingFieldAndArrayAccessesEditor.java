@@ -55,6 +55,7 @@ public class CollectConflictingFieldAndArrayAccessesEditor extends ExprEditor  {
 					if(conflicts.readWriteConflict(bcMethod, pos)) {
 						arrayAccessesNeedingVolatile.add(true);
 					} else {
+						System.out.println("CollectingConflictingFieldAndArrayAccesses: array access in " + minfo.getName() + " doesn't need volatile");
 						arrayAccessesNeedingVolatile.add(false);
 					}
 				} else if (c == AASTORE || c == BASTORE || c == CASTORE
@@ -68,6 +69,8 @@ public class CollectConflictingFieldAndArrayAccessesEditor extends ExprEditor  {
 				}
 
 			}
+		} else {
+			System.out.println("CollectingConflictingFieldAndArrayAccesses: array access in " + minfo.getName() + " codeAttr was null");
 		}
 		return super.doit(clazz, minfo);
 	}

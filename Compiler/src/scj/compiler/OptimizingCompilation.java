@@ -173,7 +173,7 @@ public class OptimizingCompilation extends CompilationDriver implements ReadWrit
 	public void rewrite(IClass iclass, CtClass ctclass) throws Exception {
 		
 		OptimizingUtil.markAllNonStaticFieldsNotVolatileAndStaticFieldsVolatile(ctclass);
-
+//TODO xxx I don't rewrite schedule sites here, it seems?!?
 		System.err.println("Warning: OptimizingCompilation.rewrite() must rewrite code of the constructors, too!!!");
 		//rewrite array accesses to call the Runtime array accessors
 		for(CtMethod ctMethod : ctclass.getDeclaredMethods()) {

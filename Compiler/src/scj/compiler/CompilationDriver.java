@@ -35,7 +35,7 @@ public abstract class CompilationDriver {
 	private Iterable<Entrypoint> entrypoints;
 	
 	//javassist stuff
-	protected ClassPool classPool;;
+	protected ClassPool classPool;
 	
 	protected CompilationDriver(CompilerOptions opts) {
 		this.compilerOptions = opts;

@@ -26,19 +26,89 @@ public class CompileAllBenchmarks {
 		return new Compiler(options);
 	}
 	
-	//@Test
+	@Test
 	public void compileBarneshutOrig() throws Exception {
 		compilerWithArgs(galoisBenchmarkArgs("barneshut", "orig")).compile();		
 	}
 	
-	//@Test
+	@Test
 	public void compileBarneshutSC() throws Exception {
 		compilerWithArgs(galoisBenchmarkArgs("barneshut", "sc")).compile();		
 	}
 	
-	@Test
+	//@Test
 	public void compileBarneshutOptimized() throws Exception {
 		compilerWithArgs(galoisBenchmarkArgs("barneshut", "default:ZeroXCFA:none")).compile();		
+	}
+	
+	/**
+	 * 
+	 */
+	
+	@Test
+	public void compileBoruvkaOrig() throws Exception {
+		compilerWithArgs(galoisBenchmarkArgs("boruvka", "orig")).compile();		
+	}
+	
+	@Test
+	public void compileBoruvkaSC() throws Exception {
+		compilerWithArgs(galoisBenchmarkArgs("boruvka", "sc")).compile();		
+	}
+	
+	/**
+	 * 
+	 */
+	
+	@Test
+	public void compileClusteringOrig() throws Exception {
+		compilerWithArgs(galoisBenchmarkArgs("clustering", "orig")).compile();		
+	}
+	
+	@Test
+	public void compileClusteringSC() throws Exception {
+		compilerWithArgs(galoisBenchmarkArgs("clustering", "sc")).compile();		
+	}
+	
+	/**
+	 * 
+	 */
+	
+	@Test
+	public void compileDelaunayrefinementOrig() throws Exception {
+		compilerWithArgs(galoisBenchmarkArgs("delaunayrefinement", "orig")).compile();		
+	}
+	
+	@Test
+	public void compileDelaunayrefinementSC() throws Exception {
+		compilerWithArgs(galoisBenchmarkArgs("delaunayrefinement", "sc")).compile();		
+	}
+	
+	/**
+	 * 
+	 */
+	
+	@Test
+	public void compileDelaunaytriangulationOrig() throws Exception {
+		compilerWithArgs(galoisBenchmarkArgs("delaunaytriangulation", "orig")).compile();		
+	}
+	
+	@Test
+	public void compileDelaunaytriangulationSC() throws Exception {
+		compilerWithArgs(galoisBenchmarkArgs("delaunaytriangulation", "sc")).compile();		
+	}
+	
+	/**
+	 * 
+	 */
+	
+	@Test
+	public void compileGmetisOrig() throws Exception {
+		compilerWithArgs(galoisBenchmarkArgs("gmetis", "orig")).compile();		
+	}
+	
+	@Test
+	public void compileGmetisSC() throws Exception {
+		compilerWithArgs(galoisBenchmarkArgs("gmetis", "sc")).compile();		
 	}
 	
 }

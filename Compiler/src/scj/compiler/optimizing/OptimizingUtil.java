@@ -111,12 +111,12 @@ public class OptimizingUtil {
 
 					@Override
 					public boolean writeReadConflict(IMethod method, Integer bytecode) {
-						return false;
+						return true;
 					}
 
 					@Override
 					public boolean writeWriteConflict(IMethod method, Integer bytecode) {
-						return false;
+						return true;
 					}
 					
 				}, stats, ctMethod, null
