@@ -5,7 +5,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.StringTokenizer;
 
-import xsched.Activation;
+import scj.Task;
 
 public class Tsp {
 	
@@ -34,14 +34,17 @@ public class Tsp {
 		return config;
 	}
 
+	public void scjMainTask_solve(Task<Void> now, Config config) {
+		new TspSolver(config).scjTask_run(new Task<Void>());
+	}
+	
 	public Result solve(String fname) throws IOException 
 	{
 		final Config config = loadConfig(fname);
 		TourElement first = new TourElement(config.startNode);
 		config.enqueue(first);
 		
-		Activation<Void> main = Activation.schedule(new TspSolver(config), "run()V;");
-		Activation.kickOffMain(main);
+		this.scjMainTask_solve(new Task<Void>(), config);
 				
 		// Sanity checks:
 		System.err.printf("minTourLength: %d\n", config.minTourLength);
@@ -78,7 +81,7 @@ public class Tsp {
 		//start with argument like shared_tests/Benchmarks/Erco/tsp/tspfiles/map10
 		//can only handle one file right now due to the way I create the initial activation.
 		Tsp tsp = new Tsp();
-		int[] tour = tsp.solve("...").minTour;
+		int[] tour = tsp.solve("Shared/benchmarks/Erco/tsp/tspfiles/tspfile17.large").minTour;
 			
 		for(int i = 0; i < tour.length; i++)
 			System.out.printf(" %d", tour[i]);

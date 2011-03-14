@@ -9,7 +9,7 @@ package sor.scj.sor;
 
 import java.util.*;
 
-import xsched.Activation;
+import scj.Task;
 
 public class Sor {
 
@@ -22,7 +22,7 @@ public class Sor {
 
 	public static int nprocs = 1;
 	
-	static Object[] t;
+	static SorWorker[] t;
 
 	public static void main(String[] args) {
 
@@ -42,7 +42,7 @@ public class Sor {
 			System.exit(-1);
 		}
 
-		t = new Object[nprocs];
+		t = new SorWorker[nprocs];
 		
 		// initialize arrays
 		int first_row = 1;
@@ -78,9 +78,7 @@ public class Sor {
 		long a = new Date().getTime();
 
 		if (!nop) {
-			Activation<Void> main = Activation.schedule(new Sor(), "begin()V;");
-			Activation.kickOffMain(main);
-			
+			new Sor().scjMainTask_begin(new Task<Void>());
 		}
 
 		long b = new Date().getTime();
@@ -102,8 +100,9 @@ public class Sor {
 		System.out.println(Thread.currentThread().getName() + ":" + s);
 	}
 
-	public void begin() {
-		Activation<Void> later = Activation.schedule(this, "end()V;");
+	public void scjMainTask_begin(Task<Void> now) {
+		Task<Void> joinTask = new Task<Void>();
+		this.scjTask_end(joinTask);
 		
 		for (int proc_id = 0; proc_id < nprocs; proc_id++) {
 			int first_row = (M * proc_id) / nprocs + 1;
@@ -115,26 +114,35 @@ public class Sor {
 				t[proc_id] = new sor_first_row_even(first_row, last_row);
 		}
 		
-		Activation<Void> iteration = Activation.schedule(this, "iteration(Lxsched/Activation;)V;", later);
-		iteration.hb(later);
+		Task<Void> iterationTask = new Task<Void>();
+		this.scjTask_iteration(iterationTask, joinTask);		
+		iterationTask.hb(joinTask);		
 	}
 	
 	public static volatile int i = -1;
-	public void iteration(Activation<Void> later) {
+	public void scjTask_iteration(Task<Void> now, Task<Void> later) {
 		i++;
 		//System.out.println("Setting up next iteration " + i);
 		if(i < Sor.iterations) {
-			Activation<Void> nextIteration = Activation.schedule(this, "iteration(Lxsched/Activation;)V;", later);
-			Activation<Void> barrier1 = Activation.schedule(this, "barrier1()V;");
-			Activation<Void> barrier2 = Activation.schedule(this, "barrier2()V;");
+			Task<Void> nextIteration = new Task<Void>();
+			Task<Void> barrier1 = new Task<Void>();
+			Task<Void> barrier2 = new Task<Void>();
+			
+			this.scjTask_iteration(nextIteration, later);
+			this.scjTask_barrier1(barrier1);
+			this.scjTask_barrier2(barrier2);
 			
 			barrier1.hb(barrier2);
-			barrier2.hb(nextIteration);			
+			barrier2.hb(nextIteration);
 			nextIteration.hb(later);
-			
+						
 			for (int proc_id = 0; proc_id < nprocs; proc_id++) {
-				Activation<Void> p1 = Activation.schedule(t[proc_id], "phase1()V;");
-				Activation<Void> p2 = Activation.schedule(t[proc_id], "phase2()V;");
+				Task<Void> p1 = new Task<Void>();
+				t[proc_id].scjTask_phase1(p1);
+				
+				Task<Void> p2 = new Task<Void>();
+				t[proc_id].scjTask_phase2(p2);
+
 				p1.hb(barrier1);
 				barrier1.hb(p2);
 				p2.hb(barrier2);
@@ -142,19 +150,24 @@ public class Sor {
 		}		
 	}
 	
-	public void barrier1() {
+	public void scjTask_barrier1(Task<Void> now) {
 		//System.out.println("Barrier 1 of iteration " + i + " reached");
 	}
 	
-	public void barrier2() {
+	public void scjTask_barrier2(Task<Void> now) {
 		//System.out.println("Barrier 2 of iteration " + i + " reached");
 	}
 	
-	public void end() {
+	public void scjTask_end(Task<Void> now) {
 		System.out.println("activations are done...");
 	}
 	
-	public static class sor_first_row_odd {
+	public static interface SorWorker {
+		public void scjTask_phase1(Task<Void> now);
+		public void scjTask_phase2(Task<Void> now); 
+	}
+	
+	public static class sor_first_row_odd implements SorWorker {
 
 		int first_row;
 		int end;
@@ -168,7 +181,7 @@ public class Sor {
 			end = b;
 		}
 
-		public void phase1() {
+		public void scjTask_phase1(Task<Void> now) {
 			int j, k;
 			//Sor.print("phase 1 iteration A "+i);
 			for (j = first_row; j <= end; j++) {
@@ -191,7 +204,7 @@ public class Sor {
 			}
 		}
 		
-		public void phase2() {
+		public void scjTask_phase2(Task<Void> now) {
 			int j, k;
 			//Sor.print("phase 2 iteration A "+i + ", first=" + first_row + " end=" + end);
 			for (j = first_row; j <= end; j++) {
@@ -216,7 +229,7 @@ public class Sor {
 
 	}
 
-	public static class sor_first_row_even {
+	public static class sor_first_row_even implements SorWorker {
 
 		int first_row;
 		int end;
@@ -230,7 +243,7 @@ public class Sor {
 			end = b;
 		}
 
-		public void phase1() {
+		public void scjTask_phase1(Task<Void> now) {
 			//Sor.print("phase 1 iteration B "+i);
 			for (int j = first_row; j <= end; j++) {
 
@@ -252,7 +265,7 @@ public class Sor {
 			}
 		}
 		
-		public void phase2() {
+		public void scjTask_phase2(Task<Void> now) {
 			//Sor.print("phase 2 iteration B "+i);
 			for (int j = first_row; j <= end; j++) {
 

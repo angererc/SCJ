@@ -2,7 +2,7 @@ package tsp.scj.tsp;
 
 import java.util.BitSet;
 
-import xsched.Activation;
+import scj.Task;
 
 public class TspSolver {
 	
@@ -17,47 +17,44 @@ public class TspSolver {
 		this.config = config;
 	}
 
-	public void run() {
+	public void scjTask_run(Task<Void> now) {
 		TourElement curr = config.getTour();
 		
 		if (curr.length < (config.numNodes - config.nodesFromEnd - 1))
-			splitTour(curr); /* Solve in parallel. */
+			/* Solve in parallel. */
+			/*
+			 * Create a tour and add it to the priority Q for each possible path
+			 * that can be derived from the current path by adding a single node
+			 * while staying under the current minimum tour length.
+			 */
+			//split tour
+			for (int i = 0; i < config.numNodes; i++) {
+				/*
+				 * Check: 1. Not already in tour 2. Edge from last entry to
+				 * node in graph and 3. Weight of new partial tour is less
+				 * than cur min.
+				 */
+				final int wt = config.weights[curr.node][i];
+				boolean t1 = !curr.visited(i); 
+				boolean t2 = (wt != 0);
+				boolean t3 = (curr.lowerBound + wt) <= config.minTourLength;
+				if (t1 && t2 && t3) {					
+					final int newNode = i;
+					TourElement newTour = new TourElement(newNode);
+					newTour.previous = curr;
+					newTour.length += curr.length;
+					newTour.visited |= curr.visited;
+					newTour.prefixWeight = curr.prefixWeight + wt;
+					newTour.lowerBound = calcBound(newTour);
+					
+					config.enqueue(newTour);
+					
+					new TspSolver(config).scjTask_run(new Task<Void>());				
+				}
+			}
 		else
 			solveTour(curr); /* Solve sequentially */
 		
-	}
-
-	private void splitTour(final TourElement curr) {
-		/*
-		 * Create a tour and add it to the priority Q for each possible path
-		 * that can be derived from the current path by adding a single node
-		 * while staying under the current minimum tour length.
-		 */
-
-		for (int i = 0; i < config.numNodes; i++) {
-			/*
-			 * Check: 1. Not already in tour 2. Edge from last entry to
-			 * node in graph and 3. Weight of new partial tour is less
-			 * than cur min.
-			 */
-			final int wt = config.weights[curr.node][i];
-			boolean t1 = !curr.visited(i); 
-			boolean t2 = (wt != 0);
-			boolean t3 = (curr.lowerBound + wt) <= config.minTourLength;
-			if (t1 && t2 && t3) {					
-				final int newNode = i;
-				TourElement newTour = new TourElement(newNode);
-				newTour.previous = curr;
-				newTour.length += curr.length;
-				newTour.visited |= curr.visited;
-				newTour.prefixWeight = curr.prefixWeight + wt;
-				newTour.lowerBound = calcBound(newTour);
-				
-				config.enqueue(newTour);
-				
-				Activation.schedule(new TspSolver(config), "run()V;");				
-			}
-		}
 	}
 
 	private int calcBound(TourElement newTour) {

@@ -1,7 +1,7 @@
 package philo.scj.philo;
 import java.util.*;
 
-import xsched.Activation;
+import scj.Task;
 
 class Table {
     boolean forks[];
@@ -49,7 +49,7 @@ public class Philo {
 	this.t = t;
     }
                 
-    public void run() {
+    public void scjTask_run(Task<Void> now) {
 	System.out.println(id + " run start");
 	o = new Hashtable();
 	try {
@@ -70,19 +70,19 @@ public class Philo {
     }
 
     public static class Driver {
-    	public static void begin() {
+    	public void scjMainTask_begin(Task<Void> now) {
         	v.addElement(new Object());
         	Table tab = new Table();
         	Philo p;
         	for (int i=0; i < NUM_PHIL; ++i) {
         	    p = new Philo(i, tab);
-        	    Activation.schedule(p, "run()V;");
+        	    
+        	    p.scjTask_run(new Task<Void>());        	    
         	}
         }
     }
-    public static void main(String args[]) {    	
-		Activation<Void> main = Activation.schedule(new Driver(), "begin()V;");
-		Activation.kickOffMain(main);
+    public static void main(String args[]) {    
+    	new Driver().scjMainTask_begin(new Task<Void>());
     }
 }
 
