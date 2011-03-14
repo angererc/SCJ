@@ -12,6 +12,9 @@ import scj.compiler.analysis.schedule.extraction.TaskSchedule;
  */
 public class FormalParameterConstraints {
 	
+	//TODO I probably don't need a full matrix here; the diagonal is always "singleton" and the opposite order can be retrieved by inverting the relation;
+	//having a full matrix makes the equals checks etc slower; however I expect that 99% of all the task methods only have very few (1, 2, or 3 or so) Task parameters and therefore
+	//I'm coding this more explicitly and less efficient.
 	private final TaskSchedule.Relation[][] relations;
 	
 	public FormalParameterConstraints() {
