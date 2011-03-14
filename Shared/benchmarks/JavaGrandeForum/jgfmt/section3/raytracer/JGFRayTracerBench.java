@@ -20,7 +20,7 @@
 
 package jgfmt.section3.raytracer;
 
-import xsched.Activation;
+import scj.Task;
 import jgfmt.jgfutil.JGFInstrumentor;
 import jgfmt.jgfutil.JGFSection3;
 
@@ -46,32 +46,44 @@ public class JGFRayTracerBench extends RayTracer implements JGFSection3 {
 
 	}
 	
-	public void start() {
-		Activation<Void> barrier1 = Activation.schedule(this, "barrier(Ljava/lang/String;)V;", "1");
-		Activation<Void> barrier2 = Activation.schedule(this, "barrier(Ljava/lang/String;)V;", "2");		
-		Activation<Void> barrier3 = Activation.schedule(this, "barrier(Ljava/lang/String;)V;", "3");
-		Activation<Void> barrier4 = Activation.schedule(this, "barrier(Ljava/lang/String;)V;", "4");
+	public void scjMainTask_start(Task<Void> now) {
+		Task<Void> barrier1 = new Task<Void>();
+		this.scjTask_barrier(barrier1, "1");
+		
+		Task<Void> barrier2 = new Task<Void>();
+		this.scjTask_barrier(barrier2, "2");
+		
+		Task<Void> barrier3 = new Task<Void>();
+		this.scjTask_barrier(barrier3, "3");
+		
+		Task<Void> barrier4 = new Task<Void>();
+		this.scjTask_barrier(barrier4, "1");
 		
 		for (int i = 0; i < nthreads; i++) {
-			ActivationsRayTracerRunner runner = new ActivationsRayTracerRunner(i, width, height);
-			Activation<Void> p1 = Activation.schedule(runner, "phase1()V;");
+			SCJRayTracerRunner runner = new SCJRayTracerRunner(i, width, height);
+			Task<Void> p1 = new Task<Void>();
+			runner.scjTask_phase1(p1);
+			
 			p1.hb(barrier1);
 			
-			Activation<Void> p2 = Activation.schedule(runner, "phase2()V;");
+			Task<Void> p2 = new Task<Void>();
+			runner.scjTask_phase2(p2);
 			barrier1.hb(p2);
 			p2.hb(barrier2);
 			
-			Activation<Void> p3 = Activation.schedule(runner, "phase3()V;");
+			Task<Void> p3 = new Task<Void>();
+			runner.scjTask_phase3(p3);
 			barrier2.hb(p3);
 			p3.hb(barrier3);
 			
-			Activation<Void> p4 = Activation.schedule(runner, "phase4()V;");
+			Task<Void> p4 = new Task<Void>();
+			runner.scjTask_phase4(p4);
 			barrier3.hb(p4);
 			p4.hb(barrier4);
 		}
 	}
 	
-	public void barrier(String name) {
+	public void scjTask_barrier(Task<Void> now, String name) {
 		//System.out.println("Barrier " + name + " reached");
 	}
 
@@ -79,8 +91,8 @@ public class JGFRayTracerBench extends RayTracer implements JGFSection3 {
 
 		if(nthreads == -1) {
 			nthreads = 2;
-			Activation<Void> start = Activation.schedule(this, "start()V;"); 
-			Activation.kickOffMain(start);			
+			
+			this.scjMainTask_start(new Task<Void>());
 		} else {	
 			//TODO commented out to avoid spurious call in schedule analysis
 //			Runnable thobjects[] = new Runnable[nthreads];

@@ -25,10 +25,10 @@
 
 package jgfmt.section3.moldyn;
 
-import xsched.Activation;
+import scj.Task;
 import jgfmt.jgfutil.JGFInstrumentor;
 
-public class mdActivations extends mdBase {
+public class mdSCJ extends mdBase {
 
 	public static final int ITERS = 100;
 	public static final double LENGTH = 50e-10;
@@ -58,7 +58,10 @@ public class mdActivations extends mdBase {
 	int movemx = 50;
 	@Override
 	public void runiters() {
+		scjMainTask_start(new Task<Void>());
+	}
 
+	public void scjMainTask_start(Task<Void> now) {
 		/* Create new arrays */
 
 		epot = new double[JGFMolDynBench.nthreads];
@@ -71,70 +74,96 @@ public class mdActivations extends mdBase {
 		double sh_force2[][][] = new double[3][JGFMolDynBench.nthreads][PARTSIZE];
 
 		/* spawn threads */
-
-		Activation<Void> barrier1 = Activation.schedule(this, "barrier(Ljava/lang/String;)V;", "1");
-		Activation<Void> barrier2 = Activation.schedule(this, "barrier(Ljava/lang/String;)V;", "2");		
-		Activation<Void> barrier3 = Activation.schedule(this, "barrier(Ljava/lang/String;)V;", "3");
-		Activation<Void> barrier4 = Activation.schedule(this, "barrier(Ljava/lang/String;)V;", "4");
+		Task<Void> barrier1 = new Task<Void>();
+		this.scjTask_barrier(barrier1, "1");
+		
+		Task<Void> barrier2 = new Task<Void>();
+		this.scjTask_barrier(barrier2, "2");
+		
+		Task<Void> barrier3 = new Task<Void>();
+		this.scjTask_barrier(barrier3, "3");
+		
+		Task<Void> barrier4 = new Task<Void>();
+		this.scjTask_barrier(barrier4, "4");
 		
 		mdRunner[] runner = new mdRunner[JGFMolDynBench.nthreads];
 		for (int i=0; i<JGFMolDynBench.nthreads; i++) {
 			runner[i] = new mdRunner(i, mm, sh_force, sh_force2);
 			
-			Activation<Void> p1 = Activation.schedule(runner[i], "phase1()V;");
+			Task<Void> p1 = new Task<Void>();
+			runner[i].scjTask_phase1(p1);
 			p1.hb(barrier1);
 			
-			Activation<Void> p2 = Activation.schedule(runner[i], "phase2()V;");
+			Task<Void> p2 = new Task<Void>();
+			runner[i].scjTask_phase2(p2);
 			barrier1.hb(p2);
 			p2.hb(barrier2);
 			
-			Activation<Void> p4 = Activation.schedule(runner[i], "phase4()V;");
+			Task<Void> p4 = new Task<Void>();
+			runner[i].scjTask_phase4(p4);
 			barrier3.hb(p4);
 			p4.hb(barrier4);
 			
 		}
 		
-		Activation<Void> lastRound = barrier2;
+		Task<Void> lastRound = barrier2;
 		for (int move = 0; move < movemx; move++) {
-			Activation<Void> barrier31 = Activation.schedule(this, "barrier(Ljava/lang/String;)V;", "31, iteration " + move);
-			Activation<Void> barrier32 = Activation.schedule(this, "barrier(Ljava/lang/String;)V;", "32, iteration " + move);
-			Activation<Void> barrier33 = Activation.schedule(this, "barrier(Ljava/lang/String;)V;", "33, iteration " + move);
-			Activation<Void> barrier34 = Activation.schedule(this, "barrier(Ljava/lang/String;)V;", "34, iteration " + move);
-			Activation<Void> barrier35 = Activation.schedule(this, "barrier(Ljava/lang/String;)V;", "35, iteration " + move);
-			Activation<Void> barrier36 = Activation.schedule(this, "barrier(Ljava/lang/String;)V;", "36, iteration " + move);
+			Task<Void> barrier31 = new Task<Void>();
+			this.scjTask_barrier(barrier31, "31, iteration " + move);
+			
+			Task<Void> barrier32 = new Task<Void>();
+			this.scjTask_barrier(barrier32, "32, iteration " + move);
+			
+			Task<Void> barrier33 = new Task<Void>();
+			this.scjTask_barrier(barrier33, "33, iteration " + move);
+			
+			Task<Void> barrier34 = new Task<Void>();
+			this.scjTask_barrier(barrier34, "34, iteration " + move);
+			
+			Task<Void> barrier35 = new Task<Void>();
+			this.scjTask_barrier(barrier35, "35, iteration " + move);
+			
+			Task<Void> barrier36 = new Task<Void>();
+			this.scjTask_barrier(barrier36, "36, iteration " + move);
 			
 			for (int i=0; i<JGFMolDynBench.nthreads; i++) {
-				Activation<Void> p31 = Activation.schedule(runner[i], "phase31()V;");
+				Task<Void> p31 = new Task<Void>();
+				runner[i].scjTask_phase31(p31);				
 				lastRound.hb(p31);
 				p31.hb(barrier31);
 			}
 			
 			for (int i=0; i<JGFMolDynBench.nthreads; i++) {
-				Activation<Void> p32 = Activation.schedule(runner[i], "phase32()V;");
+				Task<Void> p32 = new Task<Void>();
+				runner[i].scjTask_phase32(p32);
 				barrier31.hb(p32);
 				p32.hb(barrier32);
 			}
 			
 			for (int i=0; i<JGFMolDynBench.nthreads; i++) {
-				Activation<Void> p33 = Activation.schedule(runner[i], "phase33()V;");
+				Task<Void> p33 = new Task<Void>();
+				runner[i].scjTask_phase33(p33);
 				barrier32.hb(p33);
 				p33.hb(barrier33);
 			}
 			
 			for (int i=0; i<JGFMolDynBench.nthreads; i++) {
-				Activation<Void> p34 = Activation.schedule(runner[i], "phase34()V;");
+				Task<Void> p34 = new Task<Void>();
+				runner[i].scjTask_phase34(p34);
 				barrier33.hb(p34);
 				p34.hb(barrier34);
 			}
 			
 			for (int i=0; i<JGFMolDynBench.nthreads; i++) {
-				Activation<Void> p35 = Activation.schedule(runner[i], "phase35()V;");
+				Task<Void> p35 = new Task<Void>();
+				runner[i].scjTask_phase35(p35);
 				barrier34.hb(p35);
 				p35.hb(barrier35);
 			}
 			
 			for (int i=0; i<JGFMolDynBench.nthreads; i++) {
-				Activation<Void> p36 = Activation.schedule(runner[i], "phase36(I)V;", move);
+				Task<Void> p36 = new Task<Void>();
+				runner[i].scjTask_phase36(p36, move);
 				barrier35.hb(p36);
 				p36.hb(barrier36);
 				barrier36.hb(barrier3);
@@ -146,7 +175,7 @@ public class mdActivations extends mdBase {
 
 	}
 		
-	public void barrier(String id) {
+	public void scjTask_barrier(Task<Void> now, String id) {
 		//System.out.println("barrier " + id + " reached");
 	}
 	
@@ -190,13 +219,13 @@ public class mdActivations extends mdBase {
 			this.sh_force2 = sh_force2;			
 		}
 		
-		public void phase1() {
+		public void scjTask_phase1(Task<Void> now) {
 			//System.out.println(id + " phase1()");
 			/* Parameter determination */
 
-			mdsize = mdActivations.PARTSIZE;
+			mdsize = mdSCJ.PARTSIZE;
 			one = new particle[mdsize];
-			l = mdActivations.LENGTH;
+			l = mdSCJ.LENGTH;
 
 			side = Math.pow((mdsize / den), 0.3333333);
 			rcoff = mm / 4.0;
@@ -336,13 +365,13 @@ public class mdActivations extends mdBase {
 			/* Synchronise threads and start timer before MD simulation */
 		}
 		
-		public void phase2() {
+		public void scjTask_phase2(Task<Void> now) {
 			//System.out.println(id + " phase2()");
 			if (id == 0)
 				JGFInstrumentor.startTimer("Section3:MolDyn:Run");
 		}
 		
-		public void phase31() {
+		public void scjTask_phase31(Task<Void> now) {
 			//System.out.println(id + " phase31()");
 			/* move the particles and update velocities */
 
@@ -351,7 +380,7 @@ public class mdActivations extends mdBase {
 			}
 		}
 		
-		public void phase32() {
+		public void scjTask_phase32(Task<Void> now) {
 			//System.out.println(id + " phase32()");
 			if (id == 0) {
 				for (j = 0; j < 3; j++) {
@@ -361,12 +390,12 @@ public class mdActivations extends mdBase {
 				}
 			}
 
-			mdActivations.epot[id] = 0.0;
-			mdActivations.vir[id] = 0.0;
-			mdActivations.interacts[id] = 0;
+			mdSCJ.epot[id] = 0.0;
+			mdSCJ.vir[id] = 0.0;
+			mdSCJ.interacts[id] = 0;
 		}
 		
-		public void phase33() {
+		public void scjTask_phase33(Task<Void> now) {
 			//System.out.println(id + " phase33()");
 			/* compute forces */
 
@@ -375,7 +404,7 @@ public class mdActivations extends mdBase {
 			}
 		}
 		
-		public void phase34() {
+		public void scjTask_phase34(Task<Void> now) {
 			//System.out.println(id + " phase34()");
 			/* update force arrays */
 
@@ -401,20 +430,20 @@ public class mdActivations extends mdBase {
 
 			if (id == 0) {
 				for (j = 1; j < JGFMolDynBench.nthreads; j++) {
-					mdActivations.epot[0] += mdActivations.epot[j];
-					mdActivations.vir[0] += mdActivations.vir[j];
+					mdSCJ.epot[0] += mdSCJ.epot[j];
+					mdSCJ.vir[0] += mdSCJ.vir[j];
 				}
 				for (j = 1; j < JGFMolDynBench.nthreads; j++) {
-					mdActivations.epot[j] = mdActivations.epot[0];
-					mdActivations.vir[j] = mdActivations.vir[0];
+					mdSCJ.epot[j] = mdSCJ.epot[0];
+					mdSCJ.vir[j] = mdSCJ.vir[0];
 				}
 				for (j = 0; j < JGFMolDynBench.nthreads; j++) {
-					mdActivations.interactions += mdActivations.interacts[j];
+					mdSCJ.interactions += mdSCJ.interacts[j];
 				}
 			}
 		}
 		
-		public void phase35() {
+		public void scjTask_phase35(Task<Void> now) {
 			//System.out.println(id + " phase35()");
 			if (id == 0) {
 				for (j = 0; j < 3; j++) {
@@ -427,7 +456,7 @@ public class mdActivations extends mdBase {
 			sum = 0.0;
 		}
 		
-		public void phase36(int move) {
+		public void scjTask_phase36(Task<Void> now, Integer move) {
 			//System.out.println(id + " phase36()");
 			/* scale forces, update velocities */
 
@@ -465,18 +494,18 @@ public class mdActivations extends mdBase {
 			/* sum to get full potential energy and virial */
 
 			if (((move + 1) % iprint) == 0) {
-				mdActivations.ek[id] = 24.0 * ekin;
-				mdActivations.epot[id] = 4.0 * mdActivations.epot[id];
-				etot = mdActivations.ek[id] + mdActivations.epot[id];
+				mdSCJ.ek[id] = 24.0 * ekin;
+				mdSCJ.epot[id] = 4.0 * mdSCJ.epot[id];
+				etot = mdSCJ.ek[id] + mdSCJ.epot[id];
 				temp = tscale * ekin;
-				pres = den * 16.0 * (ekin - mdActivations.vir[id]) / mdsize;
+				pres = den * 16.0 * (ekin - mdSCJ.vir[id]) / mdsize;
 				vel = vel / mdsize;
 				rp = (count / mdsize) * 100.0;
 			}
 			
 		}
 		
-		public void phase4() {
+		public void scjTask_phase4(Task<Void> now) {
 			//System.out.println(id + " phase4()");
 			if (id == 0)
 				JGFInstrumentor.stopTimer("Section3:MolDyn:Run");
@@ -607,9 +636,9 @@ public class mdActivations extends mdBase {
 					rrd4 = rrd2 * rrd2;
 					rrd6 = rrd2 * rrd4;
 					rrd7 = rrd6 * rrd;
-					mdActivations.epot[id] = mdActivations.epot[id] + (rrd6 - rrd3);
+					mdSCJ.epot[id] = mdSCJ.epot[id] + (rrd6 - rrd3);
 					r148 = rrd7 - 0.5 * rrd4;
-					mdActivations.vir[id] = mdActivations.vir[id] - rd * r148;
+					mdSCJ.vir[id] = mdSCJ.vir[id] - rd * r148;
 					forcex = xx * r148;
 					fxi = fxi + forcex;
 
@@ -625,7 +654,7 @@ public class mdActivations extends mdBase {
 
 					sh_force2[2][id][i] = sh_force2[2][id][i] - forcez;
 
-					mdActivations.interacts[id]++;
+					mdSCJ.interacts[id]++;
 				}
 
 			}

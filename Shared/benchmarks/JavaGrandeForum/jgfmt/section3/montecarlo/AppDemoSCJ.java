@@ -25,8 +25,7 @@ import static jgfmt.section3.montecarlo.AppDemo.JGFavgExpectedReturnRateMC;
 
 import java.util.Vector;
 
-import xsched.Activation;
-import xsched.Task;
+import scj.Task;
 
 /**
  * Code, a test-harness for invoking and driving the Applications Demonstrator
@@ -43,7 +42,7 @@ import xsched.Task;
  * @author H W Yau
  * @version $Revision: 1.12 $ $Date: 1999/02/16 19:13:38 $
  */
-public class AppDemoActivations extends Universal implements AppDemoInterface {
+public class AppDemoSCJ extends Universal implements AppDemoInterface {
 	// ------------------------------------------------------------------------
 	// Class variables.
 	// ------------------------------------------------------------------------
@@ -93,7 +92,7 @@ public class AppDemoActivations extends Universal implements AppDemoInterface {
 	public Vector<Object> tasks;
 	public Vector<Object> results;
 
-	public AppDemoActivations(
+	public AppDemoSCJ(
 			String dataDirname,
 			String dataFilename,
 			int nTimeStepsMC,
@@ -162,16 +161,9 @@ public class AppDemoActivations extends Universal implements AppDemoInterface {
 			this.i = i;
 		}
 		
-		@Task(
-				activations= "A:B:Singleton:xsched.AnnotationTest.someTask(), " +
-							 "B:C*A*0:FwdChain:xsched.AnnotationTest.someTask(), " +
-							 "C:1:Unordered:xsched.AnnotationTest.someTask()",
-				implications="A, A=>B, B<=>C",				
-				schedule = "A->B, B->C, B->1"
-			)
-		public void run() {
+		public void scjTask_run(Task<Void> now) {
 			final PriceStock ps = new PriceStock();
-			ps.setInitAllTasks(AppDemoActivations.initAllTasks);
+			ps.setInitAllTasks(AppDemoSCJ.initAllTasks);
 			ps.setTask(tasks.elementAt(i));
 			ps.run();
 			results.addElement(ps.getResult());							
@@ -179,18 +171,21 @@ public class AppDemoActivations extends Universal implements AppDemoInterface {
 		
 	}
 
-	public void runThread() {
+	public void scjMainTask_run(Task<Void> now) {
 		results = new Vector<Object>(nRunsMC);
 		
-		Activation<Void> later = Activation.schedule(this, "done()V;");
+		Task<Void> later = new Task<Void>();
+		this.scjTask_done(later);
+		
 		for (int i=0; i < nRunsMC; i++) {
-			Activation<Void> task = Activation.schedule(new MontecarloTask(i), "run()V;");
-			task.hb(later);
+			Task<Void> mcTask = new Task<Void>();
+			new MontecarloTask(i).scjTask_run(mcTask);
+			mcTask.hb(later);			
 		}
 				
 	}
 	
-	public void done() {
+	public void scjTask_done(Task<Void> now) {
 		System.out.println("all children have finished");
 	}
 
@@ -398,5 +393,10 @@ public class AppDemoActivations extends Universal implements AppDemoInterface {
 		this.results = results;
 	}
 	// ------------------------------------------------------------------------
+
+	@Override
+	public void runThread() {
+		throw new RuntimeException("use scjTask_run()");
+	}
 }
 

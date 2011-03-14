@@ -1,12 +1,13 @@
 package jgfmt.section3.raytracer;
 
+import scj.Task;
 import jgfmt.jgfutil.JGFInstrumentor;
 
-public class ActivationsRayTracerRunner extends RayTracer {
+public class SCJRayTracerRunner extends RayTracer {
 	int id, height, width;
 	Interval interval;
 	
-	public ActivationsRayTracerRunner(int id, int width, int height) {
+	public SCJRayTracerRunner(int id, int width, int height) {
 		this.id = id;
 		this.width = width;
 		this.height = height;
@@ -26,7 +27,7 @@ public class ActivationsRayTracerRunner extends RayTracer {
 
 	}
 	
-	public void phase1() {
+	public void scjTask_phase1(Task<Void> now) {
 		//System.out.println("Task " + id + " phase1()");
 		// Set interval to be rendered to the whole picture
 		// (overkill, but will be useful to retain this for parallel versions)
@@ -34,13 +35,13 @@ public class ActivationsRayTracerRunner extends RayTracer {
 		interval = new Interval(0, width, height, 0, height, 1, id);
 	}
 
-	public void phase2() {
+	public void scjTask_phase2(Task<Void> now) {
 		//System.out.println("Task " + id + " phase2()");
 		if (id == 0)
 			JGFInstrumentor.startTimer("Section3:RayTracer:Run");
 	}
 	
-	public void phase3() {
+	public void scjTask_phase3(Task<Void> now) {
 		//System.out.println("Task " + id + " phase3()");
 		render(interval);
 
@@ -54,7 +55,7 @@ public class ActivationsRayTracerRunner extends RayTracer {
 		}
 	}
 	
-	public void phase4() {
+	public void scjTask_phase4(Task<Void> now) {
 		//System.out.println("Task " + id + " phase4()");
 		if (id == 0)
 			JGFInstrumentor.stopTimer("Section3:RayTracer:Run");

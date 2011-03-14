@@ -20,7 +20,7 @@
 
 package jgfmt.section3.moldyn;
 
-import xsched.Activation;
+import scj.Task;
 import jgfmt.jgfutil.JGFInstrumentor;
 import jgfmt.jgfutil.JGFSection3;
 
@@ -37,7 +37,7 @@ public class JGFMolDynBench implements JGFSection3 {
 		else {
 			//we use -1 as a flag to start the activation based implementation, but we use nthreads as array dimensions.
 			this.nthreads = 2;
-			this.base = new mdActivations();
+			this.base = new mdSCJ();
 		}
 	}
 
@@ -54,11 +54,11 @@ public class JGFMolDynBench implements JGFSection3 {
 	}
 
 	public void JGFapplication() {
-		if (! (base instanceof mdActivations)) { 
+		if (! (base instanceof mdSCJ)) { 
 			//base.runiters(); //TODO commented out to avoid spurious call in schedule analysis
 		} else {
-			Activation<Void> run = Activation.schedule(base, "runiters()V;");
-			Activation.kickOffMain(run);
+			mdSCJ scjBase = (mdSCJ)base;
+			scjBase.scjMainTask_start(new Task<Void>());			
 		}		
 
 	}

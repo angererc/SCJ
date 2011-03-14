@@ -21,7 +21,7 @@
 
 package jgfmt.section3.montecarlo;
 
-import xsched.Activation;
+import scj.Task;
 
 /**
  * Wrapper code to invoke the Application demonstrator.
@@ -40,13 +40,13 @@ public class CallAppDemo {
 		input[0] = 1000;
 		input[1] = datasizes[size];
 
-		String dirName = "shared_tests/Benchmarks/JavaGrandeForum/jgfmt/section3/Data";
+		String dirName = "Shared/benchmarks/JavaGrandeForum/jgfmt/section3/Data";
 		String filename = "hitData";
 		
 		if (JGFMonteCarloBench.nthreads != -1) {
 			ap = new AppDemo(dirName, filename, (input[0]), (input[1]));			
 		} else {
-			ap = new AppDemoActivations(dirName, filename, (input[0]), (input[1]));		
+			ap = new AppDemoSCJ(dirName, filename, (input[0]), (input[1]));		
 		}
 		
 		ap.initSerial();
@@ -56,8 +56,8 @@ public class CallAppDemo {
 		if (JGFMonteCarloBench.nthreads != -1) {
 			//ap.runThread(); //TODO commented out to avoid spurious call in schedule analysis
 		} else {
-			Activation<Void> runThread = Activation.schedule(ap, "runThread()V;"); 
-			Activation.kickOffMain(runThread);
+			AppDemoSCJ apSCJ = (AppDemoSCJ)ap;
+			apSCJ.scjMainTask_run(new Task<Void>());			
 		}		
 	}
 
