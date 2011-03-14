@@ -28,6 +28,20 @@ public final class TaskSchedule<TV, SM extends TaskScheduleManager<TV>> {
 			default: assert false; return null;
 			}
 		}
+		
+		@Override
+		public String toString() {
+			switch(this) {
+			case singleton: return "singleton";
+			case happensBefore: return "happensAfter";
+			case happensAfter: return "happensBefore";
+			case ordered: return "ordered";
+			case unordered: return "unordered";
+			case unknown: return "unknown";
+			default: assert false; return null;
+			}
+		}
+		
 	}
 	
 	private final String methodName;

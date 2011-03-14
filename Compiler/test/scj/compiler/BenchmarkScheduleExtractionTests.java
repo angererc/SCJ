@@ -40,12 +40,12 @@ public class BenchmarkScheduleExtractionTests {
 		OptimizingCompilation driver = (OptimizingCompilation)compiler.compilationDriver();
 		
 		driver.setUpCompiler();
-		driver.findTaskMethods();
+		driver.findConcreteTaskMethods();
 		FullScheduleAnalysis sa = (FullScheduleAnalysis)driver.getOrCreateScheduleAnalysis();
 		
 		sa.computeTaskSchedules();
 		
-		Set<IMethod> allTaskMethods = driver.allTaskMethods();
+		Set<IMethod> allTaskMethods = driver.allConcreteTaskMethods();
 				
 		for(IMethod method : allTaskMethods) {
 			TaskSchedule<Integer, ?> schedule = sa.taskScheduleForTaskMethod(method);

@@ -24,6 +24,7 @@ public class AnalysisTask<Instance, TV, SM  extends TaskScheduleManager<TV>> {
 	private HashSet<AnalysisTask<Instance, TV, SM>> childrenCache;
 		
 	AnalysisTask(AnalysisSession<Instance, TV, SM> analysis, Instance id, TaskSchedule<TV, SM> taskSchedule) {
+		System.out.println("created new AnalysisTask");
 		this.analysis = analysis;
 		this.id = id;
 		this.taskSchedule = taskSchedule;
@@ -56,6 +57,7 @@ public class AnalysisTask<Instance, TV, SM  extends TaskScheduleManager<TV>> {
 	}
 	
 	private AnalysisStepResult<Instance, TV, SM> analyze(AnalysisTaskResolver<Instance, TV, SM> resolver, FormalParameterConstraints myParamConstraints) {
+		System.out.printf("AnalysizTask.analyze(%s)\n", myParamConstraints);
 		AnalysisStepResult<Instance, TV, SM> myResult = resultsCache.get(myParamConstraints);
 		if(myResult != null)
 			return myResult;
@@ -123,7 +125,7 @@ public class AnalysisTask<Instance, TV, SM  extends TaskScheduleManager<TV>> {
 				
 				//if schedule sites are unordered, their immediate target tasks are unordered
 				switch(relation) {
-				case singleton:
+				case unordered:
 					//the targets are unordered
 					myResult.parallelTasksResult.setParallel(possibleTargetTasks, otherPossibleTargetTasks);
 					break;

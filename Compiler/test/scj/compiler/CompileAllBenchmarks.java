@@ -110,5 +110,5 @@ public class CompileAllBenchmarks {
 	public void compileGmetisSC() throws Exception {
 		compilerWithArgs(galoisBenchmarkArgs("gmetis", "sc")).compile();		
 	}
-	
+
 }

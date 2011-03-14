@@ -27,14 +27,18 @@ public class FormalParameterConstraints {
 		this.relations = new TaskSchedule.Relation[size][size];
 		//compare parameter 0 with 1, 2, 3... then 1 with 2, 3, ... etc
 		for(int i = 0; i < size-1; i++) {
+			relations[i][i] = TaskSchedule.Relation.singleton;
 			for(int j = i+1; j < size; j++) {
 				int lhs = actuals[i];
 				int rhs = actuals[j];
 				
 				relations[i][j] = taskSchedule.relationForTaskVariables(lhs, rhs);
-				relations[j][i] = taskSchedule.relationForTaskVariables(rhs, lhs);				
+				assert(relations[i][j] != null);
+				relations[j][i] = taskSchedule.relationForTaskVariables(rhs, lhs);
+				assert(relations[j][i] != null);
 			}
 		}
+		relations[size-1][size-1] = TaskSchedule.Relation.singleton;
 	}
 	
 	public int numActualParameters() {
@@ -49,7 +53,17 @@ public class FormalParameterConstraints {
 	public boolean equals(Object otherObj) {
 		if(otherObj instanceof FormalParameterConstraints) {
 			FormalParameterConstraints other = (FormalParameterConstraints)otherObj;
-			return Arrays.equals(relations, other.relations);
+			if(relations.length != other.relations.length)
+				return false;
+			
+			for(int i = 0; i < relations.length; i++) {
+				for(int j = 0; j < relations.length; j++) {
+					if(relations[i][j] != other.relations[i][j]) {
+						return false;
+					}
+				}
+			}
+			return true;
 		} else {
 			return false;
 		}
@@ -57,7 +71,12 @@ public class FormalParameterConstraints {
 	
 	@Override
 	public int hashCode() {
-		return Arrays.hashCode(relations);
+		int hash = relations.length + (relations.length == 0 ? 2011 : 2011 * relations[0][0].hashCode());
+		return hash;
 	}
 	
+	@Override
+	public String toString() {
+		return Arrays.toString(relations);
+	}
 }

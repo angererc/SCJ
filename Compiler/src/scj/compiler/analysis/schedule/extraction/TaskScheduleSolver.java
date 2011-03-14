@@ -28,7 +28,8 @@ import com.ibm.wala.util.intset.IBinaryNaturalRelation;
 public class TaskScheduleSolver extends DataflowSolver<ISSABasicBlock, FlowData> {
 
 	public static NormalNodeFlowData solve(IR ir) {
-		try {			
+		try {	
+			assert ir != null : "didn't have IR";
 			PrunedCFG<SSAInstruction, ISSABasicBlock> prunedCFG = UnhandledExceptionsPrunedCFG.make(ir.getControlFlowGraph());
 			TaskScheduleSolver solver = new TaskScheduleSolver(ir, prunedCFG);
 			

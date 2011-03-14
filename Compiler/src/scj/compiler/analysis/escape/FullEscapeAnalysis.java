@@ -79,7 +79,7 @@ public class FullEscapeAnalysis implements EscapeAnalysis {
 		}
 
 		// 2) parameters flowing into task methods.
-		for(IMethod taskMethod : compiler.allTaskMethods()) {
+		for(IMethod taskMethod : compiler.allConcreteTaskMethods()) {
 			IR ir = compiler.irForMethod(taskMethod);
 			Set<CGNode> nodes = cg.getNodes(taskMethod.getReference());
 			for(CGNode node : nodes) {

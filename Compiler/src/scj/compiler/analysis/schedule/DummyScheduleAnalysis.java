@@ -49,6 +49,6 @@ public class DummyScheduleAnalysis implements ScheduleAnalysis {
 
 	@Override
 	public Set<IMethod> parallelTasksFor(IMethod method) {
-		return compiler.allTaskMethods();
+		return compiler.allConcreteTaskMethods();
 	}
 }

@@ -59,7 +59,7 @@ public class OptimizingCompilation extends CompilationDriver implements ReadWrit
 
 	@Override
 	public void analyze() throws Exception {
-		findTaskMethods();
+		findConcreteTaskMethods();
 		computeCallGraph();
 
 		runScheduleAnalysis();
@@ -359,7 +359,7 @@ public class OptimizingCompilation extends CompilationDriver implements ReadWrit
 		return pointerAnalysis;
 	}
 
-	public Set<IMethod> allTaskMethods() {
+	public Set<IMethod> allConcreteTaskMethods() {
 		return this.taskMethods;
 	}
 
@@ -369,7 +369,7 @@ public class OptimizingCompilation extends CompilationDriver implements ReadWrit
 		}
 		this.taskNodes = new HashSet<CGNode>();
 		CallGraph callGraph = this.callGraph();
-		for(IMethod taskMethod : this.allTaskMethods()) {
+		for(IMethod taskMethod : this.allConcreteTaskMethods()) {
 			taskNodes.addAll(callGraph.getNodes(taskMethod.getReference()));
 		}
 		return taskNodes;
@@ -379,7 +379,7 @@ public class OptimizingCompilation extends CompilationDriver implements ReadWrit
 		return this.mainTaskMethods;
 	}
 
-	public void findTaskMethods() {
+	public void findConcreteTaskMethods() {
 		System.out.println("Finding task methods");
 		this.taskMethods = new HashSet<IMethod>();
 		this.mainTaskMethods = new HashSet<IMethod>();
@@ -391,7 +391,7 @@ public class OptimizingCompilation extends CompilationDriver implements ReadWrit
 			//we don't have to look in the standard library because they don't have any task methods
 			if( ! clazz.getClassLoader().getReference().equals(ClassLoaderReference.Primordial)) {
 				for(IMethod method : clazz.getDeclaredMethods()) {
-					if(WalaConstants.isNormalOrMainTaskMethod(method.getReference())) {
+					if(WalaConstants.isNormalOrMainTaskMethod(method.getReference()) && ! method.isAbstract()) {
 						taskMethods.add(method);
 						if(WalaConstants.isMainTaskMethod(method.getReference())) {
 							mainTaskMethods.add(method);
