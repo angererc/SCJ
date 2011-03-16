@@ -63,11 +63,11 @@ public class OptimizingCompilation extends ScheduleSitesOnlyCompilation implemen
 	public void analyze() throws Exception {
 		findConcreteTaskMethods();
 		computeCallGraph();
-
-		runScheduleAnalysis();
-		runEscapeAnalysis();
+		
 		runReachabilityAnalysis();
 		runReadWriteSetsAnalysis();
+		runScheduleAnalysis();
+		runEscapeAnalysis();
 		runParallelReadWriteSetsAnalysis();
 		runBytecodeReadWriteSetsAnalysis();
 	}

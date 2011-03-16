@@ -131,11 +131,11 @@ public class CompileAllBenchmarks {
 	
 	@Test
 	public void compilePhiloSC() throws Exception {
-		compilerWithArgs(galoisBenchmarkArgs("philo", "sc")).compile();		
+		compilerWithArgs(ercoBenchmarkArgs("philo", "sc")).compile();		
 	}
 	
 	@Test
 	public void compilePhiloOptimized() throws Exception {
-		compilerWithArgs(galoisBenchmarkArgs("philo", "default:ZeroXCFA:none")).compile();		
+		compilerWithArgs(ercoBenchmarkArgs("philo", "default:ZeroXCFA:none")).compile();		
 	}
 }

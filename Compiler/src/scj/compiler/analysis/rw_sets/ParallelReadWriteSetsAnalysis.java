@@ -46,15 +46,15 @@ public class ParallelReadWriteSetsAnalysis {
 				ReadWriteSet parTaskReadWriteSet = rwSetAnalysis.taskReadWriteSet(parallelTaskNode);
 				
 				//reads
-				for(Entry<InstanceKey, Set<IField>> readEntry : parTaskReadWriteSet.readEntries()) {					
-					if(escapeAnalysis.escapes(readEntry.getKey())) {
+				for(Entry<InstanceKey, Set<IField>> readEntry : parTaskReadWriteSet.readEntries()) {
+					if(escapeAnalysis.instanceMayEscape(taskNode, parallelTaskNode, readEntry.getKey())) {
 						result.addFieldReads(readEntry.getKey(), readEntry.getValue());
 					}
 				}
 				
 				//writes
 				for(Entry<InstanceKey, Set<IField>> writeEntry : parTaskReadWriteSet.writeEntries()) {					
-					if(escapeAnalysis.escapes(writeEntry.getKey())) {
+					if(escapeAnalysis.instanceMayEscape(taskNode, parallelTaskNode, writeEntry.getKey())) {
 						result.addFieldWrites(writeEntry.getKey(), writeEntry.getValue());
 					}
 				}

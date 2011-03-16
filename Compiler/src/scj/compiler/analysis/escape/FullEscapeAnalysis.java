@@ -34,10 +34,10 @@ public class FullEscapeAnalysis implements EscapeAnalysis {
 	public FullEscapeAnalysis(OptimizingCompilation compiler) {
 		this.compiler = compiler;
 	}
-
+	
 	@Override
-	public boolean escapes(InstanceKey key) {
-		return escapingInstanceKeys.contains(key);
+	public boolean instanceMayEscape(CGNode thisTask, CGNode otherTask, InstanceKey instance) {
+		return escapingInstanceKeys.contains(instance);
 	}
 	
 	public Set<InstanceKey> escapingInstanceKeys() {

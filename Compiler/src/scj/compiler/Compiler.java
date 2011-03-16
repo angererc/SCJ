@@ -32,7 +32,7 @@ public class Compiler {
 	 * -opt=ContextSensitivity:CFABuilderType:Analyses  a tuple separated by : that specifies all the optimization details
 	 * ContextSensitivity = default
 	 * CFABuilderType = one of RTA, ZeroXCFA, ZeroXContainerCFA or nCFA where n is an integer.
-	 * Analyses = one of ESC, ESC_SA, SA
+	 * Analyses = one of none, D-ESC, ESC, D-ESC_SA, ESC_SA, SA
 	 * usage:
 	 * scj.Compiler [options]* applicationFile1 applicationFile2 ...
 	 */

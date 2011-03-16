@@ -112,7 +112,7 @@ public class FullScheduleAnalysis implements ScheduleAnalysis {
 		for(Entry<IMethod, TaskSchedule<Integer, WalaTaskScheduleManager>> entry : this.taskSchedulesByMethod.entrySet()) {
 			IMethod taskMethod = entry.getKey();
 			TaskSchedule<Integer, WalaTaskScheduleManager> taskSchedule = entry.getValue();
-			assert cg.getNodes(taskMethod.getReference()).size() > 0;
+			assert cg.getNodes(taskMethod.getReference()).size() > 0 : "did not find a node for task method " + taskMethod.getReference();
 			for(CGNode node : cg.getNodes(taskMethod.getReference())) {
 				session.createTask(node, taskSchedule);
 			}			

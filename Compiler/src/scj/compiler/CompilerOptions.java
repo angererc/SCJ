@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import scj.compiler.analysis.escape.DirectedEscapeAnalysis;
 import scj.compiler.analysis.escape.DummyEscapeAnalysis;
 import scj.compiler.analysis.escape.EscapeAnalysis;
 import scj.compiler.analysis.escape.FullEscapeAnalysis;
@@ -214,7 +215,9 @@ public class CompilerOptions {
 	
 	public EscapeAnalysis createEscapeAnalysis(OptimizingCompilation compiler) {
 		String analysesType = this.optimizationLevel[2];
-		if(analysesType.contains("ESC")){
+		if(analysesType.contains("D-ESC")) {
+			return new DirectedEscapeAnalysis(compiler);
+		}else if(analysesType.contains("ESC")){
 			return new FullEscapeAnalysis(compiler);
 		} else {
 			return new DummyEscapeAnalysis();
