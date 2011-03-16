@@ -13,6 +13,7 @@ public class SequentiallyConsistentCompilation extends ScheduleSitesOnlyCompilat
 	
 	public SequentiallyConsistentCompilation(CompilerOptions opts) {
 		super(opts);
+		stats = new CompilationStats(opts);
 	}
 	
 	@Override
@@ -22,11 +23,12 @@ public class SequentiallyConsistentCompilation extends ScheduleSitesOnlyCompilat
 	
 	@Override
 	public void prepareEmitCode() throws Exception {
-		stats = new CompilationStats();
+		stats.startTiming("Code Generation");
 	}
 	
 	@Override
 	public void cleanupEmitCode() {
+		stats.stopTiming();
 		System.out.println("");
 		stats.printStats();
 	}

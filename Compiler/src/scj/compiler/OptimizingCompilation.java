@@ -57,10 +57,12 @@ public class OptimizingCompilation extends ScheduleSitesOnlyCompilation implemen
 
 	protected OptimizingCompilation(CompilerOptions opts) {
 		super(opts);
+		this.compilationStats = new CompilationStats(opts);
 	}
 
 	@Override
 	public void analyze() throws Exception {
+		this.compilationStats.startTiming("Analysis");
 		findConcreteTaskMethods();
 		computeCallGraph();
 		
@@ -70,6 +72,7 @@ public class OptimizingCompilation extends ScheduleSitesOnlyCompilation implemen
 		runEscapeAnalysis();
 		runParallelReadWriteSetsAnalysis();
 		runBytecodeReadWriteSetsAnalysis();
+		this.compilationStats.stopTiming();
 	}
 
 	@Override
@@ -88,9 +91,8 @@ public class OptimizingCompilation extends ScheduleSitesOnlyCompilation implemen
 	}
 	
 	@Override
-	public void prepareEmitCode() throws Exception {
-		this.compilationStats = new CompilationStats();
-		
+	public void prepareEmitCode() throws Exception {		
+		this.compilationStats.startTiming("Code Generation");
 		//make sure those are computed
 		this.taskForestCallGraphNodes();
 		this.taskForestMethods();
@@ -98,6 +100,7 @@ public class OptimizingCompilation extends ScheduleSitesOnlyCompilation implemen
 
 	@Override
 	public void cleanupEmitCode() {
+		this.compilationStats.stopTiming();
 		System.out.println("");
 		compilationStats.printStats();
 	}
@@ -198,7 +201,7 @@ public class OptimizingCompilation extends ScheduleSitesOnlyCompilation implemen
 	}
 	
 	@Override
-	public void rewrite(IClass iclass, CtClass ctclass) throws Exception {
+	public void rewrite(IClass iclass, CtClass ctclass) throws Exception {		
 		OptimizingUtil.markAllNonStaticFieldsNotVolatileAndStaticFieldsVolatile(ctclass);
 		
 		for(CtConstructor ctConstructor : ctclass.getDeclaredConstructors()) {
@@ -209,37 +212,43 @@ public class OptimizingCompilation extends ScheduleSitesOnlyCompilation implemen
 		}
 		
 		//do it in the end because rewriting changes the bytecode indices and that screws up our analysis data
-		super.rewrite(iclass, ctclass);
+		super.rewrite(iclass, ctclass);		
 	}
 
 	public void runScheduleAnalysis() {
-		System.out.println("running schedule analysis");
+		this.compilationStats.startTiming("Schedule Analysis");
 		getOrCreateScheduleAnalysis().analyze();
+		this.compilationStats.stopTiming();
 	}
 
 	public void runEscapeAnalysis() {
-		System.out.println("running escape analysis");
+		this.compilationStats.startTiming("Escape Analysis");
 		getOrCreateEscapeAnalysis().analyze();
+		this.compilationStats.stopTiming();
 	}
 
 	public void runReachabilityAnalysis() {
-		System.out.println("running reachability analysis");
+		this.compilationStats.startTiming("Reachability Analysis");		
 		getOrCreateReachabilityAnalysis().analyze();
+		this.compilationStats.stopTiming();
 	}
 
 	public void runReadWriteSetsAnalysis() {
-		System.out.println("running read/write sets analysis");
+		this.compilationStats.startTiming("Read Write Sets Analysis");
 		getOrCreateReadWriteSetsAnalysis().analyze();
+		this.compilationStats.stopTiming();
 	}
 
 	public void runParallelReadWriteSetsAnalysis() {
-		System.out.println("running parallel read/write sets analysis");
+		this.compilationStats.startTiming("Parallel Read Write Sets Analysis");		
 		getOrCreateParallelReadWriteSetsAnalysis().analyze();
+		this.compilationStats.stopTiming();
 	}
 
 	public void runBytecodeReadWriteSetsAnalysis() {
-		System.out.println("running bytecode read/write sets analysis");
+		this.compilationStats.startTiming("Bytecode Read Write Sets Analysis");
 		getOrCreateBytecodeReadWriteSetsAnalysis().analyze();
+		this.compilationStats.stopTiming();
 	}
 
 	public ScheduleAnalysis getOrCreateScheduleAnalysis() {
@@ -314,7 +323,7 @@ public class OptimizingCompilation extends ScheduleSitesOnlyCompilation implemen
 	}
 
 	public void computeCallGraph() {
-		System.out.println("Computing call graph");
+		this.compilationStats.startTiming("Call Graph Computation");
 		assert(callGraph == null);
 		//
 		this.walaOptions = new AnalysisOptions(scope(), entrypoints());
@@ -328,6 +337,7 @@ public class OptimizingCompilation extends ScheduleSitesOnlyCompilation implemen
 		pointerAnalysis = builder.getPointerAnalysis();
 
 		taskForestCallGraph = TaskForestCallGraph.make(callGraph, this.allTaskNodes());
+		this.compilationStats.stopTiming();
 	}
 
 	public CallGraph callGraph() {

@@ -135,6 +135,18 @@ public class CompilerOptions {
 		return result;
 	}
 	
+	public String prefix() {
+		return prefix;
+	}
+	
+	public String configurationString() {
+		if(this.driverPrefix) {
+			return compilationDriver.prefix();
+		} else {
+			return "";
+		}
+	}
+	
 	public File openExclusionsFile() {		
 		return openFile(this.exclusionsFile);
 	}
