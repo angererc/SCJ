@@ -166,7 +166,7 @@ public class OptimizingCompilation extends ScheduleSitesOnlyCompilation implemen
 		String mName = ctBehavior.getLongName();
 		
 		if(mName.startsWith("java.lang")) { //have to exclude the whole java.lang package; not sure why I can't just exclude the required classes; I don't find all of them i guess
-			System.err.println("OptimizingUtil: ignoring system method " + mName);
+			//System.err.println("OptimizingUtil: ignoring system method " + mName);
 			return;
 		}
 		
@@ -182,7 +182,7 @@ public class OptimizingCompilation extends ScheduleSitesOnlyCompilation implemen
 				return;
 			}
 			
-			ctBehavior.insertBefore("System.err.println(\"Warning: Method " + mName + " was called even though it was considered unreachable by the analysis\");");
+			//ctBehavior.insertBefore("System.err.println(\"Warning: Method " + mName + " was called even though it was considered unreachable by the analysis\");");
 			OptimizingUtil.makeAllArrayAccessesVolatile(ctBehavior);
 			OptimizingUtil.makeAllFieldAccessesVolatile(compilationStats, ctBehavior);
 		}

@@ -87,6 +87,7 @@ public class CompilationStats {
 		System.out.println("");
 		System.out.printf("Main Schedule Sites\t%d\n", mainSchedSites);
 		System.out.printf("Schedule Sites\t%d\n", schedSites);
+		System.out.println("Memory\t0");
 		System.out.println("");
 		System.out.println("\tInstrumented\tUninstrumented");
 		System.out.printf("reads\t%s\t%s\n", ir, ur);
