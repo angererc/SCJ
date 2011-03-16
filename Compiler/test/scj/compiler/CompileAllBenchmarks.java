@@ -27,6 +27,17 @@ public class CompileAllBenchmarks {
 		args.add("bin/" + prefix);
 		return args;
 	}
+	
+	private ArrayList<String> jgfBenchmarkArgs(String prefix, String opt) {
+		ArrayList<String> args = new ArrayList<String>();	
+		args.add("-prefix=" + prefix);
+		if(opt != null)
+			args.add("-opt=" + opt);
+		args.add("bin/jgfmt/section3/" + prefix);
+		args.add("bin/jgfmt/jgfutil");		
+		args.add("bin/jgfmt/section3/Data");
+		return args;
+	}
 		
 	private Compiler compilerWithArgs(ArrayList<String> args) {
 		String[] argsString = new String[args.size()];
@@ -121,7 +132,7 @@ public class CompileAllBenchmarks {
 	}
 
 	/**
-	 * 
+	 * XXX measured
 	 */
 	
 	@Test
@@ -136,11 +147,161 @@ public class CompileAllBenchmarks {
 	
 	@Test
 	public void compilePhiloFullyOptimized() throws Exception {
+		compilerWithArgs(ercoBenchmarkArgs("philo", "default:ZeroXCFA:D-ESC_SA")).compile();		
+	}
+	
+	@Test
+	public void compilePhiloFullyOptimized2() throws Exception {
 		compilerWithArgs(ercoBenchmarkArgs("philo", "TaskSensitive:ZeroXCFA:D-ESC_SA")).compile();		
 	}
 	
 	@Test
 	public void compilePhiloESCOnly() throws Exception {
 		compilerWithArgs(ercoBenchmarkArgs("philo", "default:ZeroXCFA:ESC")).compile();		
+	}
+	
+	/**
+	 * 
+	 */
+	
+	@Test
+	public void compileSorOrig() throws Exception {
+		compilerWithArgs(ercoBenchmarkArgs("sor", "orig")).compile();		
+	}
+	
+	@Test
+	public void compileSorSCNaive() throws Exception {
+		compilerWithArgs(ercoBenchmarkArgs("sor", "default:ZeroXCFA:none")).compile();		
+	}
+	
+	@Test
+	public void compileSorFullyOptimized() throws Exception {
+		compilerWithArgs(ercoBenchmarkArgs("sor", "default:ZeroXCFA:D-ESC_SA")).compile();		
+	}
+	
+	@Test
+	public void compileSorFullyOptimized2() throws Exception {
+		compilerWithArgs(ercoBenchmarkArgs("sor", "TaskSensitive:ZeroXCFA:D-ESC_SA")).compile();		
+	}
+	
+	@Test
+	public void compileSorESCOnly() throws Exception {
+		compilerWithArgs(ercoBenchmarkArgs("sor", "default:ZeroXCFA:ESC")).compile();		
+	}
+	
+	/**
+	 * 
+	 */
+	
+	@Test
+	public void compileTSPOrig() throws Exception {
+		compilerWithArgs(ercoBenchmarkArgs("tsp", "orig")).compile();		
+	}
+	
+	@Test
+	public void compileTSPSCNaive() throws Exception {
+		compilerWithArgs(ercoBenchmarkArgs("tsp", "default:ZeroXCFA:none")).compile();		
+	}
+	
+	@Test
+	public void compileTSPFullyOptimized() throws Exception {
+		compilerWithArgs(ercoBenchmarkArgs("tsp", "default:ZeroXCFA:D-ESC_SA")).compile();		
+	}
+	
+	@Test
+	public void compileTSPFullyOptimized2() throws Exception {
+		compilerWithArgs(ercoBenchmarkArgs("tsp", "TaskSensitive:ZeroXCFA:D-ESC_SA")).compile();		
+	}
+	
+	@Test
+	public void compileTSPESCOnly() throws Exception {
+		compilerWithArgs(ercoBenchmarkArgs("tsp", "default:ZeroXCFA:ESC")).compile();		
+	}
+	
+	/**
+	 * 
+	 */
+	
+	@Test
+	public void compileElevatorOrig() throws Exception {
+		compilerWithArgs(ercoBenchmarkArgs("elevator", "orig")).compile();		
+	}
+	
+	@Test
+	public void compileElevatorSCNaive() throws Exception {
+		compilerWithArgs(ercoBenchmarkArgs("elevator", "default:ZeroXCFA:none")).compile();		
+	}
+	
+	@Test
+	public void compileElevatorFullyOptimized() throws Exception {
+		compilerWithArgs(ercoBenchmarkArgs("elevator", "default:ZeroXCFA:D-ESC_SA")).compile();		
+	}
+	
+	@Test
+	public void compileElevatorFullyOptimized2() throws Exception {
+		compilerWithArgs(ercoBenchmarkArgs("elevator", "TaskSensitive:ZeroXCFA:D-ESC_SA")).compile();		
+	}
+	
+	@Test
+	public void compileElevatorESCOnly() throws Exception {
+		compilerWithArgs(ercoBenchmarkArgs("elevator", "default:ZeroXCFA:ESC")).compile();		
+	}
+	
+	/**
+	 * 
+	 */
+	
+	@Test
+	public void compileHedcOrig() throws Exception {
+		compilerWithArgs(ercoBenchmarkArgs("hedc", "orig")).compile();		
+	}
+	
+	@Test
+	public void compileHedcSCNaive() throws Exception {
+		compilerWithArgs(ercoBenchmarkArgs("hedc", "default:ZeroXCFA:none")).compile();		
+	}
+	
+	@Test
+	public void compileHedcFullyOptimized() throws Exception {
+		compilerWithArgs(ercoBenchmarkArgs("hedc", "default:ZeroXCFA:D-ESC_SA")).compile();		
+	}
+	
+	@Test
+	public void compileHedcFullyOptimized2() throws Exception {
+		compilerWithArgs(ercoBenchmarkArgs("hedc", "TaskSensitive:ZeroXCFA:D-ESC_SA")).compile();		
+	}
+	
+	@Test
+	public void compileHedcESCOnly() throws Exception {
+		compilerWithArgs(ercoBenchmarkArgs("hedc", "default:ZeroXCFA:ESC")).compile();		
+	}
+	
+	/**
+	 * 
+	 */
+	
+	@Test
+	public void compileMoldynOrig() throws Exception {
+		compilerWithArgs(jgfBenchmarkArgs("moldyn", "orig")).compile();		
+	}
+	
+	@Test
+	public void compileMoldynSCNaive() throws Exception {
+		compilerWithArgs(jgfBenchmarkArgs("moldyn", "default:ZeroXCFA:none")).compile();		
+	}
+	
+	@Test
+	public void compileMoldynFullyOptimized() throws Exception {
+		compilerWithArgs(jgfBenchmarkArgs("moldyn", "default:ZeroXCFA:D-ESC_SA")).compile();		
+	}
+	
+	@Test
+	public void compileMoldynFullyOptimized2() throws Exception {
+		compilerWithArgs(jgfBenchmarkArgs("moldyn", "TaskSensitive:ZeroXCFA:D-ESC_SA")).compile();		
+	}
+	
+	@Test
+	public void compileMoldynESCOnly() throws Exception {
+		compilerWithArgs(jgfBenchmarkArgs("moldyn", "default:ZeroXCFA:ESC")).compile();		
 	}
 }

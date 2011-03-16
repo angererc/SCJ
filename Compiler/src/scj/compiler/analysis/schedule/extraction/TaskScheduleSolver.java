@@ -60,8 +60,8 @@ public class TaskScheduleSolver extends DataflowSolver<ISSABasicBlock, FlowData>
 		this.ir = ir;
 		this.cfg = cfg;
 		this.backEdges = Acyclic.computeBackEdges(cfg, cfg.entry());
-		//do not use the CFG here because that one is pruned (no unhandled exception edges) and then the floyd warshall might crash. not sure why
-		this.cfgShortestPaths = FloydWarshall.shortestPathLengths(ir.getControlFlowGraph());
+		//do not use the CFG here because that one is pruned (no unhandled exception edges) and then the floyd warshall might crash. not sure why		
+		this.cfgShortestPaths = FloydWarshall.shortestPathLengths(ir.getControlFlowGraph());		
 	}
 
 	@Override

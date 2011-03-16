@@ -1,6 +1,8 @@
 package scj.compiler.analysis.schedule.extraction;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -20,7 +22,7 @@ import com.ibm.wala.ssa.SSAInvokeInstruction;
 import com.ibm.wala.ssa.SSANewInstruction;
 import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.types.TypeReference;
-import com.ibm.wala.util.graph.traverse.FloydWarshall;
+import com.ibm.wala.util.graph.traverse.DFS;
 
 public class WalaTaskScheduleManager implements TaskScheduleManager<Integer> {
 
@@ -124,11 +126,13 @@ public class WalaTaskScheduleManager implements TaskScheduleManager<Integer> {
 	public void initializeFullSchedule(TaskSchedule<Integer, ?> schedule) {
 		
 		//for transitive information
-		int[][] paths = FloydWarshall.shortestPathLengths(partialSchedule);
+		//int[][] paths = FloydWarshall.shortestPathLengths(partialSchedule);
 		
 		//for each ssaVariable, find the nodes in the partial schedule that are occurrences of it
-		HashMap<Integer, Set<Integer>> occurrences = this.computeOccurrences();
-		assert schedule.numberOfAllTaskVariables() == occurrences.keySet().size();
+		HashMap<Integer, Set<TaskVariable>> occurrences = this.computeOccurrences();
+		if(schedule.numberOfAllTaskVariables() != occurrences.keySet().size()) {
+			System.err.println("Warning in WalaTaskScheduleManager: num task variables(" + schedule.numberOfAllTaskVariables() + ") != occurrences(" + occurrences.keySet().size() + ")");
+		}
 		
 		//force the occurrences (ssa variables) into a nice array so that we can iterate in a diagonal matrix style
 		//this breaks encapsulation because we assume that the schedule stores task variables in an array and they are actually indexes
@@ -138,37 +142,36 @@ public class WalaTaskScheduleManager implements TaskScheduleManager<Integer> {
 				Integer lhsSSA = schedule.nodeForTaskVariable(lhsTaskVariable);
 				Integer rhsSSA = schedule.nodeForTaskVariable(rhsTaskVariable);
 				
-				TaskSchedule.Relation relation = computeRelation(occurrences, paths, lhsSSA, rhsSSA);
+				TaskSchedule.Relation relation = computeRelation(occurrences, lhsSSA, rhsSSA);
 				//the addRelation automatically adds the inverse, too
 				schedule.addRelationForTaskVariables(lhsTaskVariable, relation, rhsTaskVariable);
 			} 
 		}
 		
-		System.out.println("WalaTaskScheduleManager initializeFullSchedule");
-		System.out.println(ir);
+		//System.out.println("WalaTaskScheduleManager initializeFullSchedule");
+		//System.out.println(ir);
 		
 		this.partialSchedule = null;
 		this.ir = null;
 		
 	}
 	
-	private boolean isOutsideLoop(int occurrence) {
-		TaskVariable variable = partialSchedule.getNode(occurrence);
+	private boolean isOutsideLoop(TaskVariable variable) {		
 		return variable.loopContext().isEmpty();
 	}
 	
 	//a map from ssa variable to node in the schedule graph
-	private HashMap<Integer, Set<Integer>> computeOccurrences() {
-		HashMap<Integer, Set<Integer>> occurrences = new HashMap<Integer, Set<Integer>>();
+	private HashMap<Integer, Set<TaskVariable>> computeOccurrences() {
+		HashMap<Integer, Set<TaskVariable>> occurrences = new HashMap<Integer, Set<TaskVariable>>();
 		Iterator<TaskVariable> taskVariables = partialSchedule.iterator();
 		while(taskVariables.hasNext()) {
 			TaskVariable task = taskVariables.next();
-			Set<Integer> occs = occurrences.get(task.ssaVariable());
+			Set<TaskVariable> occs = occurrences.get(task.ssaVariable());
 			if(occs == null) {
-				occs = new HashSet<Integer>();
+				occs = new HashSet<TaskVariable>();
 				occurrences.put(task.ssaVariable(), occs);
 			}
-			occs.add(partialSchedule.getNumber(task));
+			occs.add(task);
 		}
 		return occurrences;
 	}
@@ -183,7 +186,17 @@ public class WalaTaskScheduleManager implements TaskScheduleManager<Integer> {
 	
 	}
 	
-	private TaskSchedule.Relation computeRelation(HashMap<Integer, Set<Integer>> occurrences, int[][] paths, int lhsSSA, int rhsSSA) {
+	private HashMap<TaskVariable, Collection<TaskVariable>> reachable = new HashMap<TaskVariable, Collection<TaskVariable>>();
+	private boolean isReachable(TaskVariable from, TaskVariable to) {
+		Collection<TaskVariable> coll = reachable.get(from);
+		if(coll == null) {
+			coll = DFS.getReachableNodes(partialSchedule, Collections.singleton(from));
+			reachable.put(from, coll);
+		}
+		return coll.contains(to); 		
+	}
+	
+	private TaskSchedule.Relation computeRelation(HashMap<Integer, Set<TaskVariable>> occurrences, int lhsSSA, int rhsSSA) {
 		TaskSchedule.Relation result = null;
 		
 		if(this.isNow(lhsSSA)) {
@@ -197,7 +210,7 @@ public class WalaTaskScheduleManager implements TaskScheduleManager<Integer> {
 		}
 		
 		if(lhsSSA == rhsSSA) {
-			Set<Integer> occs = occurrences.get(lhsSSA);
+			Set<TaskVariable> occs = occurrences.get(lhsSSA);
 			if(occs.size() == 1) {
 				assert isOutsideLoop(occs.iterator().next()) : "there can't be a node inside a loop without having at least one duplicate";
 				//a single node that is not in a loop
@@ -206,13 +219,13 @@ public class WalaTaskScheduleManager implements TaskScheduleManager<Integer> {
 				//more than one occurrence of the same task 
 				//the task can be at most ordered
 				result = TaskSchedule.Relation.ordered;
-				for(int lhsNode : occurrences.get(lhsSSA)) {
-					for(int rhsNode : occurrences.get(rhsSSA)) {
+				for(TaskVariable lhsNode : occurrences.get(lhsSSA)) {
+					for(TaskVariable rhsNode : occurrences.get(rhsSSA)) {
 						if(lhsNode == rhsNode && isOutsideLoop(lhsNode)) {
 							//that's OK; it's the first iteration of the loop
 						} else if(lhsNode == rhsNode && ! isOutsideLoop(lhsNode)) {
 							//make sure that the node is ordered with itself
-							if(paths[lhsNode][lhsNode] == Integer.MAX_VALUE)
+							if(! isReachable(lhsNode, lhsNode))
 								result = TaskSchedule.Relation.unordered;
 						}
 					}
@@ -221,13 +234,13 @@ public class WalaTaskScheduleManager implements TaskScheduleManager<Integer> {
 			}
 		}
 		
-		for(int lhsNode : occurrences.get(lhsSSA)) {
-			for(int rhsNode : occurrences.get(rhsSSA)) {
+		for(TaskVariable lhsNode : occurrences.get(lhsSSA)) {
+			for(TaskVariable rhsNode : occurrences.get(rhsSSA)) {
 				assert lhsNode != rhsNode; //lhs != rhs and therefore their occurrences must be different, too
 				
-				if(paths[lhsNode][rhsNode] == Integer.MAX_VALUE) {
+				if(! isReachable(lhsNode, rhsNode)) {
 					//no lhs->rhs path
-					if(paths[rhsNode][lhsNode] == Integer.MAX_VALUE) {
+					if(! isReachable(rhsNode, lhsNode)) {
 						//no lhs->rhs and no rhs->lhs 
 						result = TaskSchedule.Relation.unordered;						
 					} else {
@@ -243,7 +256,7 @@ public class WalaTaskScheduleManager implements TaskScheduleManager<Integer> {
 					}
 				} else {
 					//lhs -> rhs
-					if(paths[rhsNode][lhsNode] == Integer.MAX_VALUE) {
+					if(! isReachable(rhsNode, lhsNode)) {
 						//lhs->rhs but not rhs->lhs 
 						if(result == null) {
 							result = TaskSchedule.Relation.happensBefore;

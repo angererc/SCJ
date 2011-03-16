@@ -43,7 +43,7 @@ final class TransferFunctionProvider implements ITransferFunctionProvider<ISSABa
 					return NOT_CHANGED;
 				} else {
 					if(DEBUG)
-						System.out.println("TransferFunctionProvider: meet " + lhs + " value did change");
+						System.out.println("TransferFunctionProvider: meet " + lhs + " value did change; " + lhsData.getStatsString());
 					lhsData.copyState(rhsData);
 					return CHANGED;
 				}

@@ -14,9 +14,11 @@ public class ScheduleExtractionDriver {
 		return flowData;
 	}
 
-	public static TaskSchedule<Integer, WalaTaskScheduleManager> extractTaskSchedule(NormalNodeFlowData flowData, SSACache ssaCache, IR ir) {		
+	public static TaskSchedule<Integer, WalaTaskScheduleManager> extractTaskSchedule(NormalNodeFlowData flowData, SSACache ssaCache, IR ir) {
+		//System.out.println("Extracting schedule from method " + ir.getMethod());
 		WalaTaskScheduleManager manager = WalaTaskScheduleManager.make(ssaCache, ir, flowData);
 		TaskSchedule<Integer, WalaTaskScheduleManager> taskSchedule = new TaskSchedule<Integer, WalaTaskScheduleManager>(ir.getMethod().getName().toString(), manager);
+		//System.out.println("Done extracting schedule from method " + ir.getMethod());
 		return taskSchedule;
 	}
 	

@@ -3,7 +3,9 @@ package scj.compiler.optimizing;
 import java.util.ArrayList;
 import java.util.Stack;
 
+import scj.compiler.CompilationDriver;
 import scj.compiler.CompilerOptions;
+import scj.compiler.OptimizingCompilation;
 
 import javassist.expr.FieldAccess;
 
@@ -88,6 +90,18 @@ public class CompilationStats {
 		System.out.printf("Main Schedule Sites\t%d\n", mainSchedSites);
 		System.out.printf("Schedule Sites\t%d\n", schedSites);
 		System.out.println("Memory\t0");
+		
+		CompilationDriver driver = options.compilationDriver();
+		if(driver instanceof OptimizingCompilation) {
+			OptimizingCompilation opt = (OptimizingCompilation)driver;
+			System.out.println("# Classes\t" + opt.classHierarchy().getNumberOfClasses());
+			System.out.println("# CG Nodes\t" + opt.callGraph().getNumberOfNodes());
+			System.out.println("# Task Nodes\t" + opt.allConcreteTaskMethods().size());
+			System.out.println("# Task Forest CG Nodes (extracted)\t" + opt.taskForestCallGraphNodes().size());
+			System.out.println("# Task Forest CG Nodes (from graph)\t" + opt.taskForestCallGraph().getNumberOfNodes());
+			System.out.println("# Task Forest Methods\t" + opt.taskForestMethods().size());			
+		}
+		
 		System.out.println("");
 		System.out.println("\tInstrumented\tUninstrumented");
 		System.out.printf("reads\t%s\t%s\n", ir, ur);

@@ -36,6 +36,23 @@ public class NormalNodeFlowData extends FlowData {
 		this.basicBlock = basicBlock;
 	}
 
+	public String getStatsString() {
+		StringBuilder stats = new StringBuilder();
+		if(loopContexts != null) {
+			stats.append("#loop contexts: " + loopContexts.size() + ";");
+		}
+		if(currentContexts != null) {
+			 stats.append("# current contexts: " + currentContexts.size() + ";");
+		}
+		if(phiMappings != null) {
+			stats.append("# phi mappings " + phiMappings.size() + ";");
+		}
+		if(partialSchedule != null) {
+			stats.append("# nodes " + partialSchedule.getNumberOfNodes() + ";");
+		}
+		return stats.toString();
+	}
+	
 	public SimpleGraph<TaskVariable> partialSchedule() {
 		return partialSchedule;
 	}

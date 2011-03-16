@@ -51,7 +51,9 @@ public class AnalysisTask<Instance, TV, SM  extends TaskScheduleManager<TV>> {
 			int scheduleSite = scheduleSites.next();
 			Collection<Instance> taskInstanceIDs = resolver.possibleTargetTasksForSite(this, taskSchedule.nodeForTaskVariable(scheduleSite));
 			Collection<AnalysisTask<Instance, TV, SM>> possibleTargetTasks = analysis.tasksWithIDs(taskInstanceIDs);
-			assert(possibleTargetTasks.size() > 0) : " didn't find any targets for schedule site " + taskSchedule.nodeForTaskVariable(scheduleSite) + " in " + taskSchedule;
+			if(possibleTargetTasks.size() == 0) {
+				System.err.println("Warning in AnalysisTask: didn't find any targets for schedule site " + taskSchedule.nodeForTaskVariable(scheduleSite) + " in " + taskSchedule);
+			}
 			this.possibleTargetTasksCache.put(scheduleSite, possibleTargetTasks);
 		}
 	}
@@ -215,6 +217,10 @@ public class AnalysisTask<Instance, TV, SM  extends TaskScheduleManager<TV>> {
 		while(scheduleSites.hasNext()) {
 			int scheduleSite = scheduleSites.next();
 		
+			if(this.possibleTargetTasksCache == null) {
+				System.err.println("Warning in AnalysisTask: possibleTargetTasksCache is null; not sure if that's OK or not...");
+				continue;
+			}
 			Collection<AnalysisTask<Instance, TV, SM>> possibleTargetTasks = this.possibleTargetTasksCache.get(scheduleSite);
 			childrenCache.addAll(possibleTargetTasks);
 			for(AnalysisTask<Instance, TV, SM> possibleTask : possibleTargetTasks) {

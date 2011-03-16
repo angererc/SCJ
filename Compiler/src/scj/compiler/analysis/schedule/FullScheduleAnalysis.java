@@ -99,9 +99,12 @@ public class FullScheduleAnalysis implements ScheduleAnalysis {
 		SSACache ssaCache = compiler.cache().getSSACache();
 		for(IMethod taskMethod : compiler.allConcreteTaskMethods()) {
 			assert compiler.irForMethod(taskMethod) != null : "didn't find IR for method " + taskMethod;
+			System.out.println("Computing task schedule of method " + taskMethod);
 			TaskSchedule<Integer, WalaTaskScheduleManager> taskSchedule = ScheduleExtractionDriver.extractTaskSchedule(ssaCache, compiler.irForMethod(taskMethod));
+			System.out.println("done computing task schedule of method " + taskMethod);
 			this.taskSchedulesByMethod.put(taskMethod, taskSchedule);	
 		}
+		System.out.println("done computing task schedules");
 	}
 
 	public void populateAnalysisSession() {
@@ -112,7 +115,9 @@ public class FullScheduleAnalysis implements ScheduleAnalysis {
 		for(Entry<IMethod, TaskSchedule<Integer, WalaTaskScheduleManager>> entry : this.taskSchedulesByMethod.entrySet()) {
 			IMethod taskMethod = entry.getKey();
 			TaskSchedule<Integer, WalaTaskScheduleManager> taskSchedule = entry.getValue();
-			assert cg.getNodes(taskMethod.getReference()).size() > 0 : "did not find a node for task method " + taskMethod.getReference();
+			if(cg.getNodes(taskMethod.getReference()).size() == 0) {
+				System.err.println("Warning in FullScheduleAnalysis: did not find a callgraph node for task method " + taskMethod.getReference());
+			}
 			for(CGNode node : cg.getNodes(taskMethod.getReference())) {
 				session.createTask(node, taskSchedule);
 			}			

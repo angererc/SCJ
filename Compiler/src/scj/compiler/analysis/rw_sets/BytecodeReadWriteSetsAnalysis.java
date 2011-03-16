@@ -62,7 +62,13 @@ public class BytecodeReadWriteSetsAnalysis {
 
 	private IField lookupField(FieldReference fieldRef) {
 		IClass clazz = compiler.classHierarchy().lookupClass(fieldRef.getDeclaringClass());
-		return clazz.getField(fieldRef.getName());
+		
+		if(clazz == null) {
+			System.err.println("Warning: didn't find class " + fieldRef.getDeclaringClass() + " for field " + fieldRef);
+			return null;
+		} else {
+			return clazz.getField(fieldRef.getName());
+		}
 	}
 	
 	private Map<Integer, ReadWriteSet> getOrCreateNodeSets(CGNode node) {
@@ -144,6 +150,9 @@ public class BytecodeReadWriteSetsAnalysis {
 					@Override
 					public void visitGet(SSAGetInstruction instruction) {
 						IField field = lookupField(instruction.getDeclaredField());
+						if(field == null)
+							return;
+						
 						PointerKey pointer;
 						if(instruction.isStatic()) {
 							pointer = heap.getPointerKeyForStaticField(field);
@@ -156,6 +165,9 @@ public class BytecodeReadWriteSetsAnalysis {
 					@Override
 					public void visitPut(SSAPutInstruction instruction) {
 						IField field = lookupField(instruction.getDeclaredField());
+						if(field == null)
+							return;
+						
 						PointerKey pointer;
 						if(instruction.isStatic()) {
 							pointer = heap.getPointerKeyForStaticField(field);
