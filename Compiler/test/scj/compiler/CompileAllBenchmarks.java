@@ -18,6 +18,15 @@ public class CompileAllBenchmarks {
 		args.add("bin/galois_scj");
 		return args;
 	}
+	
+	private ArrayList<String> ercoBenchmarkArgs(String prefix, String opt) {
+		ArrayList<String> args = new ArrayList<String>();	
+		args.add("-prefix=" + prefix);
+		if(opt != null)
+			args.add("-opt=" + opt);
+		args.add("bin/" + prefix);
+		return args;
+	}
 		
 	private Compiler compilerWithArgs(ArrayList<String> args) {
 		String[] argsString = new String[args.size()];
@@ -111,4 +120,17 @@ public class CompileAllBenchmarks {
 		compilerWithArgs(galoisBenchmarkArgs("gmetis", "sc")).compile();		
 	}
 
+	/**
+	 * 
+	 */
+	
+	@Test
+	public void compilePhiloOrig() throws Exception {
+		compilerWithArgs(ercoBenchmarkArgs("philo", "orig")).compile();		
+	}
+	
+	@Test
+	public void compilePhiloSC() throws Exception {
+		compilerWithArgs(galoisBenchmarkArgs("philo", "sc")).compile();		
+	}
 }
