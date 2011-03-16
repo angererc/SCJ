@@ -8,10 +8,11 @@ import com.ibm.wala.classLoader.IClass;
 
 public class ScheduleSitesOnlyCompilation extends CompilationDriver {
 
-	private final ScheduleSiteEditor scheduleSiteEditor = new ScheduleSiteEditor();
+	private final ScheduleSiteEditor scheduleSiteEditor;
 	
 	protected ScheduleSitesOnlyCompilation(CompilerOptions opts) {
 		super(opts);
+		this.scheduleSiteEditor = new ScheduleSiteEditor(compilationStats);
 	}
 
 	@Override

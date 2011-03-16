@@ -3,6 +3,8 @@ package scj.compiler;
 import java.io.File;
 import java.io.IOException;
 
+import scj.compiler.optimizing.CompilationStats;
+
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.NotFoundException;
@@ -28,6 +30,8 @@ public abstract class CompilationDriver {
 	
 	protected final CompilerOptions compilerOptions;
 	
+	protected CompilationStats compilationStats;
+	
 	//wala stuff
 	private AnalysisCache cache;
 	private AnalysisScope scope;
@@ -39,6 +43,7 @@ public abstract class CompilationDriver {
 	
 	protected CompilationDriver(CompilerOptions opts) {
 		this.compilerOptions = opts;
+		compilationStats = new CompilationStats(opts);
 	}
 	
 	public CompilerOptions compilerOptions() {
@@ -97,8 +102,13 @@ public abstract class CompilationDriver {
 	}	
 	
 	public abstract String prefix();
-	public void prepareEmitCode() throws Exception { }
-	public void cleanupEmitCode() { }
+	public void prepareEmitCode() throws Exception { 
+		compilationStats.startTiming("Code Generation");
+	}
+	public void cleanupEmitCode() { 
+		compilationStats.stopTiming();
+		compilationStats.printStats();
+	}
 	public abstract boolean wantsToRewrite(IClass iclass);
 	public abstract void rewrite(IClass iclass, CtClass ctclass) throws Exception;
 	

@@ -17,7 +17,6 @@ import scj.compiler.analysis.rw_sets.ReadWriteConflictDetector;
 import scj.compiler.analysis.rw_sets.ReadWriteSet;
 import scj.compiler.analysis.rw_sets.ReadWriteSetsAnalysis;
 import scj.compiler.analysis.schedule.ScheduleAnalysis;
-import scj.compiler.optimizing.CompilationStats;
 import scj.compiler.optimizing.OptimizingUtil;
 import scj.compiler.wala.util.TaskForestCallGraph;
 import scj.compiler.wala.util.WalaConstants;
@@ -52,12 +51,9 @@ public class OptimizingCompilation extends ScheduleSitesOnlyCompilation implemen
 	private HashSet<IMethod> taskMethods;
 	private HashSet<IMethod> mainTaskMethods;
 	private Set<CGNode> taskNodes; //lazily constructed
-	private CompilationStats compilationStats;
 	
-
 	protected OptimizingCompilation(CompilerOptions opts) {
 		super(opts);
-		this.compilationStats = new CompilationStats(opts);
 	}
 
 	@Override
@@ -92,19 +88,11 @@ public class OptimizingCompilation extends ScheduleSitesOnlyCompilation implemen
 	
 	@Override
 	public void prepareEmitCode() throws Exception {		
-		this.compilationStats.startTiming("Code Generation");
+		super.prepareEmitCode();
 		//make sure those are computed
 		this.taskForestCallGraphNodes();
 		this.taskForestMethods();
 	}
-
-	@Override
-	public void cleanupEmitCode() {
-		this.compilationStats.stopTiming();
-		System.out.println("");
-		compilationStats.printStats();
-	}
-
 	
 	/* (non-Javadoc)
 	 * @see scj.compiler.ReadWriteConflictDetector#readReadConflict(com.ibm.wala.classLoader.IMethod, java.lang.Integer)

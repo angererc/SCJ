@@ -1,6 +1,5 @@
 package scj.compiler;
 
-import scj.compiler.optimizing.CompilationStats;
 import scj.compiler.optimizing.OptimizingUtil;
 
 import javassist.CtClass;
@@ -9,11 +8,10 @@ import com.ibm.wala.classLoader.IClass;
 
 public class SequentiallyConsistentCompilation extends ScheduleSitesOnlyCompilation {
 
-	private CompilationStats stats;
+	
 	
 	public SequentiallyConsistentCompilation(CompilerOptions opts) {
-		super(opts);
-		stats = new CompilationStats(opts);
+		super(opts);		
 	}
 	
 	@Override
@@ -21,18 +19,6 @@ public class SequentiallyConsistentCompilation extends ScheduleSitesOnlyCompilat
 		return "sc";
 	}
 	
-	@Override
-	public void prepareEmitCode() throws Exception {
-		stats.startTiming("Code Generation");
-	}
-	
-	@Override
-	public void cleanupEmitCode() {
-		stats.stopTiming();
-		System.out.println("");
-		stats.printStats();
-	}
-
 	@Override
 	public void rewrite(IClass iclass, CtClass ctclass) throws Exception {
 		
@@ -46,7 +32,7 @@ public class SequentiallyConsistentCompilation extends ScheduleSitesOnlyCompilat
 		super.rewrite(iclass, ctclass);
 		
 		OptimizingUtil.makeAllArrayAccessesVolatile(ctclass);
-		OptimizingUtil.makeAllFieldAccessesVolatile(stats, ctclass);
+		OptimizingUtil.makeAllFieldAccessesVolatile(compilationStats, ctclass);
 	}
 
 	@Override

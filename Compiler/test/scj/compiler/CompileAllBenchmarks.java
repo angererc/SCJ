@@ -130,17 +130,17 @@ public class CompileAllBenchmarks {
 	}
 	
 	@Test
-	public void compilePhiloSC() throws Exception {
-		compilerWithArgs(ercoBenchmarkArgs("philo", "sc")).compile();		
-	}
-	
-	@Test
-	public void compilePhiloOptimized() throws Exception {
+	public void compilePhiloSCNaive() throws Exception {
 		compilerWithArgs(ercoBenchmarkArgs("philo", "default:ZeroXCFA:none")).compile();		
 	}
 	
 	@Test
-	public void compilePhiloOptimized2() throws Exception {
+	public void compilePhiloFullyOptimized() throws Exception {
 		compilerWithArgs(ercoBenchmarkArgs("philo", "TaskSensitive:ZeroXCFA:D-ESC_SA")).compile();		
+	}
+	
+	@Test
+	public void compilePhiloESCOnly() throws Exception {
+		compilerWithArgs(ercoBenchmarkArgs("philo", "default:ZeroXCFA:ESC")).compile();		
 	}
 }

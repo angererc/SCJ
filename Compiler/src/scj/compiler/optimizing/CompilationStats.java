@@ -10,7 +10,8 @@ import javassist.expr.FieldAccess;
 public class CompilationStats {
 	
 	private final CompilerOptions options;
-	private int ir, ur, iw, uw, ia, ua = 0;
+	private int ir, ur, iw, uw, ia, ua;
+	private int schedSites, mainSchedSites;
 	private Stack<Timing> timings = new Stack<Timing>();
 	private ArrayList<Timing> timingsList = new ArrayList<Timing>();
 	
@@ -59,6 +60,14 @@ public class CompilationStats {
 		ia++;
 	}
 	
+	public void recordScheduleSite() {
+		schedSites++;
+	}
+	
+	public void recordMainScheduleSite() {
+		mainSchedSites++;
+	}
+	
 	public void startTiming(String name) {
 		System.out.println("Starting " + name);
 		timings.push(new Timing(name));		
@@ -73,7 +82,11 @@ public class CompilationStats {
 
 	public void printStats() {
 		assert timings.isEmpty();
+		System.out.println("");
 		System.out.printf("%s\t%s\n", options.prefix(), options.configurationString());
+		System.out.println("");
+		System.out.printf("Main Schedule Sites\t%d\n", mainSchedSites);
+		System.out.printf("Schedule Sites\t%d\n", schedSites);
 		System.out.println("");
 		System.out.println("\tInstrumented\tUninstrumented");
 		System.out.printf("reads\t%s\t%s\n", ir, ur);
