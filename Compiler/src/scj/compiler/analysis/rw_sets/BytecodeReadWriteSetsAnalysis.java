@@ -89,7 +89,7 @@ public class BytecodeReadWriteSetsAnalysis {
 		final PointerAnalysis pa = compiler.pointerAnalysis();
 		final HeapModel heap = pa.getHeapModel();
 
-		nodesLoop: for(final CGNode node : compiler.taskForestCallGraph()) {
+		nodesLoop: for(final CGNode node : compiler.callGraph()) {
 			IR ir = node.getIR();
 			if(ir == null) {
 				assert node.getMethod().isNative();

@@ -138,4 +138,9 @@ public class CompileAllBenchmarks {
 	public void compilePhiloOptimized() throws Exception {
 		compilerWithArgs(ercoBenchmarkArgs("philo", "default:ZeroXCFA:none")).compile();		
 	}
+	
+	@Test
+	public void compilePhiloOptimized2() throws Exception {
+		compilerWithArgs(ercoBenchmarkArgs("philo", "TaskSensitive:ZeroXCFA:D-ESC_SA")).compile();		
+	}
 }

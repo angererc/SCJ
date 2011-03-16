@@ -11,18 +11,21 @@ import scj.compiler.analysis.escape.FullEscapeAnalysis;
 import scj.compiler.analysis.schedule.DummyScheduleAnalysis;
 import scj.compiler.analysis.schedule.FullScheduleAnalysis;
 import scj.compiler.analysis.schedule.ScheduleAnalysis;
+import scj.compiler.wala.util.TaskStringContextSelector;
 
 import com.ibm.wala.ipa.callgraph.AnalysisCache;
 import com.ibm.wala.ipa.callgraph.AnalysisOptions;
 import com.ibm.wala.ipa.callgraph.AnalysisScope;
 import com.ibm.wala.ipa.callgraph.CallGraphBuilder;
 import com.ibm.wala.ipa.callgraph.ContextSelector;
+import com.ibm.wala.ipa.callgraph.impl.DefaultContextSelector;
 import com.ibm.wala.ipa.callgraph.impl.Util;
 import com.ibm.wala.ipa.callgraph.propagation.SSAContextInterpreter;
 import com.ibm.wala.ipa.callgraph.propagation.cfa.ZeroXCFABuilder;
 import com.ibm.wala.ipa.callgraph.propagation.cfa.ZeroXContainerCFABuilder;
 import com.ibm.wala.ipa.callgraph.propagation.cfa.ZeroXInstanceKeys;
 import com.ibm.wala.ipa.callgraph.propagation.cfa.nCFABuilder;
+import com.ibm.wala.ipa.callgraph.propagation.cfa.nCFAContextSelector;
 import com.ibm.wala.ipa.callgraph.propagation.rta.BasicRTABuilder;
 import com.ibm.wala.ipa.cha.ClassHierarchy;
 import com.ibm.wala.util.io.FileProvider;
@@ -148,6 +151,12 @@ public class CompilerOptions {
 		String contextType = optimizationLevel[0];
 		if(contextType.equals("default")) {
 			return null;
+		} else if(contextType.equals("TaskSensitive")) {
+			ContextSelector def = new DefaultContextSelector(options);
+		    ContextSelector nCFAContextSelector = new nCFAContextSelector(1, def);
+		    
+		    TaskStringContextSelector customSelector = new TaskStringContextSelector(nCFAContextSelector);
+		    return customSelector;
 		} else {
 			throw new IllegalArgumentException("Illegal context sensitivity: " + contextType);
 		}
