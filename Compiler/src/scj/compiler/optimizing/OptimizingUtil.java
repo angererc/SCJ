@@ -15,7 +15,9 @@ import com.ibm.wala.types.Selector;
 import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CodeConverter;
+import javassist.CtBehavior;
 import javassist.CtClass;
+import javassist.CtConstructor;
 import javassist.CtField;
 import javassist.CtMethod;
 import javassist.NotFoundException;
@@ -75,9 +77,9 @@ public class OptimizingUtil {
 		return converter;
 	}
 	
-	public static void makeAllArrayAccessesVolatile(CtMethod method) throws NotFoundException, CannotCompileException {
-		CodeConverter converter = arrayAccessReplacementConverter(method.getDeclaringClass().getClassPool());
-		method.instrument(converter);
+	public static void makeAllArrayAccessesVolatile(CtBehavior behavior) throws NotFoundException, CannotCompileException {
+		CodeConverter converter = arrayAccessReplacementConverter(behavior.getDeclaringClass().getClassPool());
+		behavior.instrument(converter);
 	}
 	
 	public static void makeAllArrayAccessesVolatile(CtClass ctclass) throws NotFoundException, CannotCompileException {
@@ -94,7 +96,7 @@ public class OptimizingUtil {
 		}
 	}
 
-	public static void makeAllFieldAccessesVolatile(CompilationStats stats, CtMethod ctMethod) throws CannotCompileException, NotFoundException {
+	public static void makeAllFieldAccessesVolatile(CompilationStats stats, CtBehavior ctBehavior) throws CannotCompileException, NotFoundException {
 		//we know that bc is only used in calls to the conflict detector which is unused when rewriting all accesses; so we can just pass null
 		makeConflictingFieldAndArrayAccessesVolatile(
 				new ReadWriteConflictDetector() {
@@ -119,11 +121,11 @@ public class OptimizingUtil {
 						return true;
 					}
 					
-				}, stats, ctMethod, null
+				}, stats, ctBehavior, null
 		);
 	}
 	
-	public static void makeConflictingFieldAndArrayAccessesVolatile(ReadWriteConflictDetector conflicts, CompilationStats stats, CtMethod ctMethod, IBytecodeMethod bcMethod) throws CannotCompileException, NotFoundException {
+	public static void makeConflictingFieldAndArrayAccessesVolatile(ReadWriteConflictDetector conflicts, CompilationStats stats, CtBehavior ctBehavior, IBytecodeMethod bcMethod) throws CannotCompileException, NotFoundException {
 		//we can only map wala ssa instructions to javassist bytecodes through the bytecode index. However,
 		//when we replace a field access with a call to unsafe, the bytecode indices change and subsequent javassist bytecodes don't match up with the wala
 		//counterparts any more
@@ -132,13 +134,13 @@ public class OptimizingUtil {
 		//another solution would be to edit the javassist body backwards but I didn't find an easy way to do that...
 		
 		CollectConflictingFieldAndArrayAccessesEditor collector = new CollectConflictingFieldAndArrayAccessesEditor(conflicts, bcMethod);
-		ctMethod.instrument(collector);
+		ctBehavior.instrument(collector);
 		
 		ConflictingVolatileFieldAccessesEditor editor = new ConflictingVolatileFieldAccessesEditor(collector.fieldAccessesNeedingVolatile, stats);		
-		ctMethod.instrument(editor);
+		ctBehavior.instrument(editor);
 		
-		CodeConverter converter = conflictingArrayAccessReplacementConverter(stats, ctMethod.getDeclaringClass().getClassPool(), collector.arrayAccessesNeedingVolatile);
-		ctMethod.instrument(converter);
+		CodeConverter converter = conflictingArrayAccessReplacementConverter(stats, ctBehavior.getDeclaringClass().getClassPool(), collector.arrayAccessesNeedingVolatile);
+		ctBehavior.instrument(converter);
 		
 		assert collector.fieldAccessesNeedingVolatile.size() == 0 : "not all field accesses have been seen?!?";
 		assert collector.arrayAccessesNeedingVolatile.size() == 0 : "not all array accesses have been seen?!?";
@@ -171,12 +173,13 @@ public class OptimizingUtil {
 		}
 	}
 	
-	public static IBytecodeMethod ctMethodToIBytecodeMethod(CtMethod ctMethod, IClass iclass) {
-		String signature = ctMethod.getSignature();
-		Selector selector = Selector.make(ctMethod.getName() + signature);
+	public static IBytecodeMethod ctBehaviorToIBytecodeMethod(CtBehavior ctBehavior, IClass iclass) {
+		String signature = ctBehavior.getSignature();
+		String name = ((ctBehavior instanceof CtConstructor) ? "<init>" : ctBehavior.getName());
+		Selector selector = Selector.make(name + signature);
 		IBytecodeMethod iMethod = (IBytecodeMethod)iclass.getMethod(selector);
-		//System.out.println(iMethod + "; name=" + ctMethod.getName() + "; signature=" + signature + "; selector=" + selector);
-		assert iMethod != null;
+		
+		assert iMethod != null : "didn't find method with selector " + selector + " in class " + iclass + ": " + iclass.getDeclaredMethods();
 		return iMethod;
 	}
 	

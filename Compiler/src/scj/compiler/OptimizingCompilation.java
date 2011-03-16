@@ -4,7 +4,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import javassist.CtBehavior;
 import javassist.CtClass;
+import javassist.CtConstructor;
 import javassist.CtMethod;
 import javassist.Modifier;
 import scj.compiler.analysis.escape.EscapeAnalysis;
@@ -31,7 +33,7 @@ import com.ibm.wala.ipa.callgraph.propagation.PointerAnalysis;
 import com.ibm.wala.ipa.cha.ClassHierarchy;
 import com.ibm.wala.types.ClassLoaderReference;
 
-public class OptimizingCompilation extends CompilationDriver implements ReadWriteConflictDetector {
+public class OptimizingCompilation extends ScheduleSitesOnlyCompilation implements ReadWriteConflictDetector {
 
 	private AnalysisOptions walaOptions;
 	private CallGraph callGraph;
@@ -169,39 +171,45 @@ public class OptimizingCompilation extends CompilationDriver implements ReadWrit
 		return false;
 	}
 	
+	private void rewriteBehavior(CtBehavior ctBehavior, IClass iclass) throws Exception {
+		String mName = ctBehavior.getLongName();
+		
+		if(mName.startsWith("java.lang")) { //have to exclude the whole java.lang package; not sure why I can't just exclude the required classes; I don't find all of them i guess
+			System.err.println("OptimizingUtil: ignoring system method " + mName);
+			return;
+		}
+		
+		final IBytecodeMethod bcMethod = OptimizingUtil.ctBehaviorToIBytecodeMethod(ctBehavior, iclass);
+		
+		if(taskForestMethods.contains(bcMethod)) {
+			//reachable method				
+			OptimizingUtil.makeConflictingFieldAndArrayAccessesVolatile(this, compilationStats, ctBehavior, bcMethod);				
+		} else {				
+			//method should be unreachable
+			int mods = ctBehavior.getModifiers();
+			if(Modifier.isNative(mods) || Modifier.isAbstract(mods)) {
+				return;
+			}
+			
+			ctBehavior.insertBefore("System.err.println(\"Warning: Method " + mName + " was called even though it was considered unreachable by the analysis\");");
+			OptimizingUtil.makeAllArrayAccessesVolatile(ctBehavior);
+			OptimizingUtil.makeAllFieldAccessesVolatile(compilationStats, ctBehavior);
+		}
+	}
+	
 	@Override
 	public void rewrite(IClass iclass, CtClass ctclass) throws Exception {
-		
 		OptimizingUtil.markAllNonStaticFieldsNotVolatileAndStaticFieldsVolatile(ctclass);
-//TODO xxx I don't rewrite schedule sites here, it seems?!?
-		System.err.println("Warning: OptimizingCompilation.rewrite() must rewrite code of the constructors, too!!!");
-		//rewrite array accesses to call the Runtime array accessors
-		for(CtMethod ctMethod : ctclass.getDeclaredMethods()) {
-			String mName = ctMethod.getLongName();
-			
-			if(mName.startsWith("java.lang")) { //have to exclude the whole java.lang package; not sure why I can't just exclude the required classes; I don't find all of them i guess
-				System.err.println("OptimizingUtil: ignoring system method " + mName);
-				continue;
-			}
-			
-			final IBytecodeMethod bcMethod = OptimizingUtil.ctMethodToIBytecodeMethod(ctMethod, iclass);
-			
-			if(taskForestMethods.contains(bcMethod)) {
-				//reachable method				
-				OptimizingUtil.makeConflictingFieldAndArrayAccessesVolatile(this, compilationStats, ctMethod, bcMethod);				
-			} else {				
-				//method should be unreachable
-				int mods = ctMethod.getModifiers();
-				if(Modifier.isNative(mods) || Modifier.isAbstract(mods)) {
-					continue;
-				}
-				
-				ctMethod.insertBefore("System.err.println(\"Warning: Method " + mName + " was called even though it was considered unreachable by the analysis\");");
-				OptimizingUtil.makeAllArrayAccessesVolatile(ctMethod);
-				OptimizingUtil.makeAllFieldAccessesVolatile(compilationStats, ctMethod);
-			}
-
+		
+		for(CtConstructor ctConstructor : ctclass.getDeclaredConstructors()) {
+			this.rewriteBehavior(ctConstructor, iclass);
 		}
+		for(CtMethod ctMethod : ctclass.getDeclaredMethods()) {
+			this.rewriteBehavior(ctMethod, iclass);
+		}
+		
+		//do it in the end because rewriting changes the bytecode indices and that screws up our analysis data
+		super.rewrite(iclass, ctclass);
 	}
 
 	public void runScheduleAnalysis() {

@@ -133,4 +133,9 @@ public class CompileAllBenchmarks {
 	public void compilePhiloSC() throws Exception {
 		compilerWithArgs(galoisBenchmarkArgs("philo", "sc")).compile();		
 	}
+	
+	@Test
+	public void compilePhiloOptimized() throws Exception {
+		compilerWithArgs(galoisBenchmarkArgs("philo", "default:ZeroXCFA:none")).compile();		
+	}
 }
