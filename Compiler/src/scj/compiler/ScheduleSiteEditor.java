@@ -6,7 +6,6 @@ import javassist.expr.ExprEditor;
 import javassist.expr.MethodCall;
 import scj.Runtime;
 import scj.Task;
-import scj.compiler.optimizing.CompilationStats;
 
 public class ScheduleSiteEditor extends ExprEditor {
 	private CtMethod method;

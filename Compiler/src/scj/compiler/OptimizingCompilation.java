@@ -182,9 +182,13 @@ public class OptimizingCompilation extends ScheduleSitesOnlyCompilation implemen
 				return;
 			}
 			
+			if(! mName.startsWith("java")) {
+				System.err.println("OptimizingCompilation: instrumenting non-standard library method: " + mName + "; num nodes in CG: " + callGraph.getNodes(bcMethod.getReference()).size());
+				
 			//ctBehavior.insertBefore("System.err.println(\"Warning: Method " + mName + " was called even though it was considered unreachable by the analysis\");");
-			OptimizingUtil.makeAllArrayAccessesVolatile(ctBehavior);
-			OptimizingUtil.makeAllFieldAccessesVolatile(compilationStats, ctBehavior);
+				OptimizingUtil.makeAllArrayAccessesVolatile(ctBehavior);
+				OptimizingUtil.makeAllFieldAccessesVolatile(compilationStats, ctBehavior);
+			}
 		}
 	}
 	
@@ -378,6 +382,7 @@ public class OptimizingCompilation extends ScheduleSitesOnlyCompilation implemen
 		for(IMethod taskMethod : this.allConcreteTaskMethods()) {
 			taskNodes.addAll(callGraph.getNodes(taskMethod.getReference()));
 		}
+		taskNodes.add(callGraph.getFakeRootNode());
 		return taskNodes;
 	}
 

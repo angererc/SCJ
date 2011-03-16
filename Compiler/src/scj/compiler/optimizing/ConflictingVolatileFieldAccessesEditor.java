@@ -3,6 +3,8 @@ package scj.compiler.optimizing;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 
+import scj.compiler.CompilationStats;
+
 import javassist.CannotCompileException;
 import javassist.CtClass;
 import javassist.CtPrimitiveType;
@@ -79,11 +81,14 @@ public class ConflictingVolatileFieldAccessesEditor extends ExprEditor {
 				}
 			}
 		} else {
-			if(f.isReader()) {
-				stats.recordUninstrumentedRead(f);
-			} else {
-				assert f.isWriter();
-				stats.recordUninstrumentedWrite(f);
+			//we make all static fields volatile; but we only want to record if we did not instrument a non-static field read/write
+			if(!f.isStatic() && !needsVolatile) {
+				if(f.isReader()) {				
+					stats.recordUninstrumentedRead(f);
+				} else {
+					assert f.isWriter();				
+					stats.recordUninstrumentedWrite(f);
+				}
 			}
 		}
 	}

@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 
+import scj.compiler.CompilationStats;
 import scj.compiler.analysis.rw_sets.ReadWriteConflictDetector;
 import sun.misc.Unsafe;
 

@@ -1,11 +1,8 @@
-package scj.compiler.optimizing;
+package scj.compiler;
 
 import java.util.ArrayList;
 import java.util.Stack;
 
-import scj.compiler.CompilationDriver;
-import scj.compiler.CompilerOptions;
-import scj.compiler.OptimizingCompilation;
 
 import javassist.expr.FieldAccess;
 

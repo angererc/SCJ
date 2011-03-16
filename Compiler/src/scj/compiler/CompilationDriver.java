@@ -3,7 +3,6 @@ package scj.compiler;
 import java.io.File;
 import java.io.IOException;
 
-import scj.compiler.optimizing.CompilationStats;
 
 import javassist.ClassPool;
 import javassist.CtClass;

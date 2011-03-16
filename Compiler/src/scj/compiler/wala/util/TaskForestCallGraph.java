@@ -14,6 +14,7 @@ import com.ibm.wala.util.graph.traverse.DFS;
 public class TaskForestCallGraph extends PartialCallGraph {
 
 	public static TaskForestCallGraph make(final CallGraph cg, final Collection<CGNode> taskMethodNodes) {
+		//allEntryPoints.addAll(cg.getEntrypointNodes());
 		final Collection<CGNode> nodes = DFS.getReachableNodes(cg, taskMethodNodes, new Filter<CGNode>(){
 			@Override
 			public boolean accepts(CGNode o) {				

@@ -41,7 +41,8 @@ public class ReadWriteSetsAnalysis {
 	private IField lookupField(FieldReference fieldRef) {
 		IClass clazz = compiler.classHierarchy().lookupClass(fieldRef.getDeclaringClass());
 		if(clazz == null) {			
-			throw new RuntimeException("didn't find IClass for name " + fieldRef.getDeclaringClass().toString());
+			System.err.println("ReadWriteSetsAnalysis warning: didn't find IClass for name " + fieldRef.getDeclaringClass().toString());
+			return null;
 		}
 		return clazz.getField(fieldRef.getName());
 	}
@@ -82,6 +83,9 @@ public class ReadWriteSetsAnalysis {
 				@Override
 				public void visitGet(SSAGetInstruction instruction) {
 					IField field = lookupField(instruction.getDeclaredField());
+					if(field == null)
+						return;
+					
 					PointerKey pointer;
 					if(instruction.isStatic()) {
 						pointer = heap.getPointerKeyForStaticField(field);
@@ -97,6 +101,9 @@ public class ReadWriteSetsAnalysis {
 				@Override
 				public void visitPut(SSAPutInstruction instruction) {
 					IField field = lookupField(instruction.getDeclaredField());
+					if(field == null) 
+						return;
+					
 					PointerKey pointer;
 					if(instruction.isStatic()) {
 						pointer = heap.getPointerKeyForStaticField(field);

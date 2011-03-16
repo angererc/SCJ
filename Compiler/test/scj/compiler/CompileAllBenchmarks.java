@@ -304,4 +304,62 @@ public class CompileAllBenchmarks {
 	public void compileMoldynESCOnly() throws Exception {
 		compilerWithArgs(jgfBenchmarkArgs("moldyn", "default:ZeroXCFA:ESC")).compile();		
 	}
+	
+	/**
+	 * 
+	 */
+	
+	@Test
+	public void compileMontecarloOrig() throws Exception {
+		compilerWithArgs(jgfBenchmarkArgs("montecarlo", "orig")).compile();		
+	}
+	
+	@Test
+	public void compileMontecarloSCNaive() throws Exception {
+		compilerWithArgs(jgfBenchmarkArgs("montecarlo", "default:ZeroXCFA:none")).compile();		
+	}
+	
+	@Test
+	public void compileMontecarloFullyOptimized() throws Exception {
+		compilerWithArgs(jgfBenchmarkArgs("montecarlo", "default:ZeroXCFA:D-ESC_SA")).compile();		
+	}
+	
+	@Test
+	public void compileMontecarloFullyOptimized2() throws Exception {
+		compilerWithArgs(jgfBenchmarkArgs("montecarlo", "TaskSensitive:ZeroXCFA:D-ESC_SA")).compile();		
+	}
+	
+	@Test
+	public void compileMontecarloESCOnly() throws Exception {
+		compilerWithArgs(jgfBenchmarkArgs("montecarlo", "default:ZeroXCFA:ESC")).compile();		
+	}
+	
+	/**
+	 * 
+	 */
+	
+	@Test
+	public void compileRaytracerOrig() throws Exception {
+		compilerWithArgs(jgfBenchmarkArgs("raytracer", "orig")).compile();		
+	}
+	
+	@Test
+	public void compileRaytracerSCNaive() throws Exception {
+		compilerWithArgs(jgfBenchmarkArgs("raytracer", "default:ZeroXCFA:none")).compile();		
+	}
+	
+	@Test
+	public void compileRaytracerFullyOptimized() throws Exception {
+		compilerWithArgs(jgfBenchmarkArgs("raytracer", "default:ZeroXCFA:D-ESC_SA")).compile();		
+	}
+	
+	@Test
+	public void compileRaytracerFullyOptimized2() throws Exception {
+		compilerWithArgs(jgfBenchmarkArgs("raytracer", "TaskSensitive:ZeroXCFA:D-ESC_SA")).compile();		
+	}
+	
+	@Test
+	public void compileRaytracerESCOnly() throws Exception {
+		compilerWithArgs(jgfBenchmarkArgs("raytracer", "default:ZeroXCFA:ESC")).compile();		
+	}
 }

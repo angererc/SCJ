@@ -2,6 +2,8 @@ package scj.compiler.optimizing;
 
 import java.util.ArrayList;
 
+import scj.compiler.CompilationStats;
+
 import javassist.CodeConverter;
 import javassist.CtClass;
 import javassist.NotFoundException;
